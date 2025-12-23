@@ -63,8 +63,24 @@
         #registration-modal.active { display: flex; }
         
         .neural-level-badge { background: linear-gradient(135deg, var(--accent-primary), #a855f7); color: white; padding: 2px 10px; border-radius: 4px; font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 900; }
-        .ranking-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1rem; padding: 0.75rem; margin-top: 1rem; box-shadow: none !important; }
-
+        /* ランキングの横スクロール対応案1 (CSSのみで解決) */
+        .ranking-card { 
+            background: rgba(255, 255, 255, 0.03); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            border-radius: 1rem; 
+            padding: 0.75rem; 
+            margin-top: 1rem; 
+            box-shadow: none !important;
+            overflow-x: auto; /* スマホで横スクロールを許可 */
+            scrollbar-width: thin; /* スクロールバーを控えめに */
+        }
+        .ranking-card::-webkit-scrollbar { height: 4px; }
+        .ranking-card::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        /* 中のグリッドが420px以下に潰れないように固定 */
+        .ranking-card .grid { 
+            min-width: 420px; 
+        }
         .goal-btn { transition: all 0.3s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-family: 'Orbitron', sans-serif; box-shadow: none !important; }
         .goal-btn.active { background: var(--accent-primary); border-color: white; color: white; }
 
