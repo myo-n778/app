@@ -79,7 +79,7 @@
         
         /* 中のグリッドが420px以下に潰れないように固定 */
         .ranking-card .grid { 
-            min-width: 520px; 
+            min-width: 420px; 
         }
         .goal-btn { transition: all 0.3s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-family: 'Orbitron', sans-serif; box-shadow: none !important; }
         .goal-btn.active { background: var(--accent-primary); border-color: white; color: white; }
@@ -177,7 +177,7 @@
                         </div>
                         <div class="ranking-card space-y-2">
                             <h3 class="text-[10px] font-black text-amber-400 uppercase italic flex items-center gap-2 mb-3"><i class="fas fa-trophy"></i> Top Scholars</h3>
-                            <div class="grid grid-cols-[24px_1fr_45px_30px_65px_65px_30px] gap-2 items-center text-[8px] font-black text-white/40 uppercase border-b border-white/10 pb-1.5 mb-1">
+                            <div class="grid grid-cols-[24px_0.75fr_45px_30px_65px_65px_30px] gap-2 items-center text-[8px] font-black text-white/40 uppercase border-b border-white/10 pb-1.5 mb-1">
                                 <span>RK</span><span>NAME</span><span class="text-left">EXP</span><span class="text-left">LV</span><span class="text-left">10th Ave.</span><span class="text-left">ALL Ave.</span><span class="text-left">SESS</span>
                             </div>
                             <div id="ranking-container" class="space-y-1"></div>
@@ -443,7 +443,7 @@
                     rankCont.innerHTML = rankingData.length > 0 ? rankingData.map((r, i) => {
                         const rLv = Math.floor((r.exp || 0) / 10);
                         const isMe = r.name === USER_NAME;
-                        return `<div class="grid grid-cols-[24px_0.5fr_45px_30px_65px_65px_30px] gap-2 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}">
+                        return `<div class="grid grid-cols-[24px_0.75fr_45px_30px_65px_65px_30px] gap-2 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}">
                             <span class="opacity-40 font-black">${i+1}</span>
                             <span class="truncate font-bold">${r.name}</span>
                             <span class="text-left font-flashy text-[9px] text-indigo-400">${r.exp}</span>
