@@ -443,7 +443,7 @@
                     rankCont.innerHTML = rankingData.length > 0 ? rankingData.map((r, i) => {
                         const rLv = Math.floor((r.exp || 0) / 10);
                         const isMe = r.name === USER_NAME;
-                        return `<div class="grid grid-cols-[24px_0.5fr_45px_30px_65px_65px_30px] gap-2 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}">
+                        return `<div class="grid grid-cols-[24px_1fr_45px_30px_65px_65px_30px] gap-2 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}">
                             <span class="opacity-40 font-black">${i+1}</span>
                             <span class="truncate font-bold">${r.name}</span>
                             <span class="text-left font-flashy text-[9px] text-indigo-400">${r.exp}</span>
