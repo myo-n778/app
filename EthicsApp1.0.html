@@ -159,18 +159,19 @@
             <!-- ヘッダーエリア -->
             <div class="text-center md:text-left space-y-2">
                 <h1 class="text-4xl md:text-7xl font-header tracking-tighter text-white">ETHICS <span id="app-version-display" class="font-flashy text-2xl md:text-5xl" style="color: var(--accent-primary)">ULTRA 98th</span></h1>
-                <div class="flex flex-wrap justify-center md:justify-start items-center gap-3">
+                <div class="flex flex-wrap justify-center md:justify-start items-center gap-2">
                     <button id="active-user-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic cursor-pointer transition-all hover:opacity-80">LOADING...</button>
+                    <button id="question-shuffle-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic cursor-pointer transition-all hover:opacity-80">SHUFFLE OFF</button>
                     <span id="neural-level-display" class="neural-level-badge">LV. 00</span>
                     <span id="current-rank-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic">RANK --</span>
                     <span id="last-attempt-display" class="bg-cyan-500/20 text-cyan-200 text-[9px] px-3 py-1 rounded-full border border-cyan-400/40 font-medium"></span>
                     
-                    <div class="flex items-center gap-2 ml-0 md:ml-4 pl-4 border-l border-white/10">
-                        <label class="text-[8px] font-black text-amber-400 uppercase italic flex items-center gap-1"><i class="fas fa-bullseye"></i> Target</label>
-                        <div class="flex gap-1">
-                            <button onclick="setGoal(60)" id="goal-60" class="goal-btn px-2 py-1 rounded-md text-[9px] font-bold">60%</button>
-                            <button onclick="setGoal(80)" id="goal-80" class="goal-btn px-2 py-1 rounded-md text-[9px] font-bold active">80%</button>
-                            <button onclick="setGoal(100)" id="goal-100" class="goal-btn px-2 py-1 rounded-md text-[9px] font-bold">100%</button>
+                    <div class="flex items-center gap-1.5 ml-0 md:ml-2 pl-2 border-l border-white/10 flex-shrink-0">
+                        <label class="text-[8px] font-black text-amber-400 uppercase italic flex items-center gap-1 whitespace-nowrap"><i class="fas fa-bullseye"></i> Target</label>
+                        <div class="flex gap-0.5">
+                            <button onclick="setGoal(60)" id="goal-60" class="goal-btn px-1.5 py-0.5 rounded-md text-[8px] font-bold">60%</button>
+                            <button onclick="setGoal(80)" id="goal-80" class="goal-btn px-1.5 py-0.5 rounded-md text-[8px] font-bold active">80%</button>
+                            <button onclick="setGoal(100)" id="goal-100" class="goal-btn px-1.5 py-0.5 rounded-md text-[8px] font-bold">100%</button>
                         </div>
                     </div>
                 </div>
@@ -328,6 +329,7 @@
         let canAnswer = true; let chartInstance = null;
         let sessionAnswers = [];
         let isRankingPublic = true; // ランキング公開設定（デフォルトは公開）
+        let isQuestionShuffleEnabled = false; // 問題シャッフル設定（デフォルトはOFF）
         let currentSessionEra = ""; let currentSessionRangeLabel = "";
         let userHistory = [];
         let questionStats = {};
@@ -439,10 +441,14 @@
             // ローカルストレージに値がない場合はデフォルトで公開（true）
             const storedPublic = localStorage.getItem('ethics_ranking_public');
             isRankingPublic = storedPublic === null ? true : storedPublic === 'true';
+            // ローカルストレージから問題シャッフル設定を読み込む（デフォルトはOFF）
+            const storedShuffle = localStorage.getItem('ethics_question_shuffle');
+            isQuestionShuffleEnabled = storedShuffle === 'true';
             if (!USER_NAME) { 
                 getEl('registration-modal').classList.add('active'); 
             } else { 
                 updateUserDisplay(); 
+                updateShuffleDisplay();
             } 
         }
         function updateUserDisplay() { 
@@ -466,9 +472,31 @@
             localStorage.setItem('ethics_ranking_public', isRankingPublic.toString());
             updateUserDisplay();
         }
+        function updateShuffleDisplay() {
+            const displayEl = getEl('question-shuffle-display');
+            if (displayEl) {
+                // 状態を小さく英語で表示
+                const shuffleLabel = isQuestionShuffleEnabled ? '<span class="text-[7px] text-emerald-400/70 font-normal ml-1">ON</span>' : '<span class="text-[7px] text-slate-300/80 font-normal ml-1">OFF</span>';
+                displayEl.innerHTML = 'SHUFFLE' + shuffleLabel;
+                // シャッフル設定に応じてスタイルを変更（光らせる=ON）
+                if (isQuestionShuffleEnabled) {
+                    displayEl.classList.add('bg-emerald-500/30', 'border-emerald-400/50', 'text-emerald-200', 'shadow-lg', 'shadow-emerald-500/50');
+                    displayEl.classList.remove('bg-white/10', 'border-white/20', 'text-white');
+                } else {
+                    displayEl.classList.add('bg-white/10', 'border-white/20', 'text-white');
+                    displayEl.classList.remove('bg-emerald-500/30', 'border-emerald-400/50', 'text-emerald-200', 'shadow-lg', 'shadow-emerald-500/50');
+                }
+            }
+        }
+        function toggleQuestionShuffle() {
+            isQuestionShuffleEnabled = !isQuestionShuffleEnabled;
+            localStorage.setItem('ethics_question_shuffle', isQuestionShuffleEnabled.toString());
+            updateShuffleDisplay();
+        }
         
-        setOnClick('register-btn', () => { const val = getEl('user-name-input').value.trim(); if (!val) return; USER_NAME = val; localStorage.setItem('ethics_user_name', USER_NAME); getEl('registration-modal').classList.remove('active'); updateUserDisplay(); window.syncAllFromSpreadsheet(true); });
+        setOnClick('register-btn', () => { const val = getEl('user-name-input').value.trim(); if (!val) return; USER_NAME = val; localStorage.setItem('ethics_user_name', USER_NAME); getEl('registration-modal').classList.remove('active'); updateUserDisplay(); updateShuffleDisplay(); window.syncAllFromSpreadsheet(true); });
         setOnClick('active-user-display', toggleRankingPublic);
+        setOnClick('question-shuffle-display', toggleQuestionShuffle);
 
         async function logDetailedResultsToSpreadsheet(pct, correct, total) {
             if (!FIXED_GAS_URL) return;
@@ -978,7 +1006,14 @@
             });
         };
 
-        function startQuiz() { currentIdx = 0; score = 0; streak = 0; sessionAnswers = []; getEl('home-screen').classList.add('hidden'); getEl('quiz-screen').classList.remove('hidden'); getEl('q-total').innerText = quizData.length; renderDots(); showQuestion(); }
+        function startQuiz() { 
+            currentIdx = 0; score = 0; streak = 0; sessionAnswers = []; 
+            // シャッフルが有効な場合、問題の出題順をシャッフル
+            if (isQuestionShuffleEnabled) {
+                quizData = shuffleArray([...quizData]);
+            }
+            getEl('home-screen').classList.add('hidden'); getEl('quiz-screen').classList.remove('hidden'); getEl('q-total').innerText = quizData.length; renderDots(); showQuestion(); 
+        }
         function showQuestion() { 
             canAnswer = true; const q = quizData[currentIdx]; getEl('q-current').innerText = currentIdx + 1; 
             getEl('current-accuracy').innerText = (currentIdx === 0 ? 0 : Math.round((score/currentIdx)*100)) + '%'; 
