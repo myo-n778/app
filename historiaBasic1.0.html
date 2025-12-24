@@ -10,8 +10,19 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Orbitron:wght@400;700;900&family=Cinzel:wght@700&display=swap');
         
-        /* パターン6 (modeF) をデフォルトに設定 */
         :root {
+            --bg-deep: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.85);
+            --accent-primary: #6366f1;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --accent-cyan: #00f2ff;
+            --text-main: #f8fafc;
+        }
+
+         /* パターン6 (modeF) をデフォルトに設定 */
+         :root {
             --bg-deep: #083344;
             --panel-bg: rgba(22, 78, 99, 0.8);
             --accent-primary: #00f2ff;
@@ -20,7 +31,7 @@
             --accent-amber: #f59e0b;
             --accent-cyan: #00f2ff;
             --text-main: #ecfeff;
-        }
+        }/* パターン6 (modeF) をデフォルトに設定 */
 
         body { font-family: 'Noto Sans JP', sans-serif; background-color: var(--bg-deep); color: var(--text-main); margin: 0; overflow-x: hidden; transition: background-color 0.5s ease; }
         .font-flashy { font-family: 'Orbitron', sans-serif; }
@@ -64,7 +75,7 @@
         #registration-modal.active { display: flex; }
         
         .neural-level-badge { background: linear-gradient(135deg, var(--accent-primary), #a855f7); color: white; padding: 2px 10px; border-radius: 4px; font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 900; }
-       /* ランキングの横スクロール対応案1 (CSSのみで解決) */
+        /* ランキングの横スクロール対応案1 (CSSのみで解決) */
         .ranking-card { 
             background: rgba(255, 255, 255, 0.03); 
             border: 1px solid rgba(255, 255, 255, 0.05); 
@@ -78,12 +89,30 @@
         .ranking-card::-webkit-scrollbar { height: 4px; }
         .ranking-card::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         
-        /* 中のグリッドが420px以下に潰れないように固定 */
+        /* 中のグリッドが適切な幅になるように固定 */
         .ranking-card .grid { 
-            min-width: 420px; 
+            min-width: 740px; 
         }
         .goal-btn { transition: all 0.3s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-family: 'Orbitron', sans-serif; box-shadow: none !important; }
         .goal-btn.active { background: var(--accent-primary); border-color: white; color: white; }
+        
+        /* レベルアップ後の点滅アニメーション（金色） */
+        @keyframes levelUpBlink {
+            0%, 100% { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.8); }
+            50% { color: #fcd34d; text-shadow: 0 0 20px rgba(252, 211, 77, 1); }
+        }
+        .level-up-blink {
+            animation: levelUpBlink 1s ease-in-out infinite;
+        }
+        
+        /* レベルアップが近いときの点滅アニメーション（紫/ピンク） */
+        @keyframes nearLevelUpBlink {
+            0%, 100% { color: #a855f7; text-shadow: 0 0 8px rgba(168, 85, 247, 0.6); }
+            50% { color: #ec4899; text-shadow: 0 0 15px rgba(236, 72, 153, 0.8); }
+        }
+        .near-level-up-blink {
+            animation: nearLevelUpBlink 1.5s ease-in-out infinite;
+        }
 
         .theme-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s; position: relative; }
         .theme-swatch:hover { transform: scale(1.15); }
@@ -105,7 +134,7 @@
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
         }
-        .credit-glow-primary { color: var(--accent-primary); text-shadow: 0 0 8px rgba(0, 242, 255, 0.6); }
+        .credit-glow-primary { color: var(--accent-primary); text-shadow: 0 0 8px rgba(99, 102, 241, 0.6); }
         .credit-glow-amber { color: var(--accent-amber); text-shadow: 0 0 8px rgba(245, 158, 11, 0.6); }
         .credit-glow-cyan { color: var(--accent-cyan); text-shadow: 0 0 8px rgba(0, 242, 255, 0.6); }
         .copyright-text { letter-spacing: 0.4em; opacity: 0.3; transition: opacity 0.3s; }
@@ -143,9 +172,10 @@
             <div class="text-center md:text-left space-y-2">
                 <h1 class="text-4xl md:text-7xl font-header tracking-tighter text-white">HISTORIA <span id="app-version-display" class="font-flashy text-2xl md:text-5xl" style="color: var(--accent-primary)">ULTRA 98th</span></h1>
                 <div class="flex flex-wrap justify-center md:justify-start items-center gap-3">
-                    <span id="active-user-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic">LOADING...</span>
+                    <button id="active-user-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic cursor-pointer transition-all hover:opacity-80">LOADING...</button>
                     <span id="neural-level-display" class="neural-level-badge">LV. 00</span>
                     <span id="current-rank-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic">RANK --</span>
+                    <span id="last-attempt-display" class="bg-cyan-500/20 text-cyan-200 text-[9px] px-3 py-1 rounded-full border border-cyan-400/40 font-medium"></span>
                     
                     <div class="flex items-center gap-2 ml-0 md:ml-4 pl-4 border-l border-white/10">
                         <label class="text-[8px] font-black text-amber-400 uppercase italic flex items-center gap-1"><i class="fas fa-bullseye"></i> Target</label>
@@ -172,20 +202,23 @@
                             </div>
                         </div>
                         <div style="position:relative; height:240px; width:100%; margin-top: 10px;"><canvas id="performanceChart"></canvas></div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-500 mb-0.5 uppercase font-bold">Total EXP</p><p id="total-neural-exp" class="text-sm md:text-lg font-flashy text-white">0</p></div>
-                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-500 mb-0.5 uppercase font-bold">10回平均</p><p id="recent-accuracy" class="text-sm md:text-lg font-flashy text-orange-400">--%</p></div>
-                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-500 mb-0.5 uppercase font-bold">通算正答率</p><p id="best-accuracy" class="text-sm md:text-lg font-flashy text-emerald-400">--%</p></div>
-                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-500 mb-0.5 uppercase font-bold">累計演習</p><p id="total-sessions-count" class="text-sm md:text-lg font-flashy text-white">0</p></div>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-300 mb-0.5 uppercase font-bold">Total EXP</p><p id="total-neural-exp" class="text-sm md:text-lg font-flashy text-purple-400">0</p></div>
+                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-300 mb-0.5 uppercase font-bold">10回平均</p><p id="recent-accuracy" class="text-sm md:text-lg font-flashy text-orange-400">--%</p></div>
+                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-300 mb-0.5 uppercase font-bold">通算正答率</p><p id="best-accuracy" class="text-sm md:text-lg font-flashy text-emerald-400">--%</p></div>
+                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-300 mb-0.5 uppercase font-bold">累計演習</p><p id="total-sessions-count" class="text-sm md:text-lg font-flashy text-white">0</p></div>
+                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-300 mb-0.5 uppercase font-bold">現在連続</p><p id="current-streak-display" class="text-sm md:text-lg font-flashy text-amber-400">0</p></div>
+                            <div class="bg-slate-900/50 p-2 md:p-3 rounded-xl border border-white/5 text-center"><p class="text-[8px] text-slate-300 mb-0.5 uppercase font-bold">最大連続</p><p id="max-streak-display" class="text-sm md:text-lg font-flashy text-cyan-400">0</p></div>
                         </div>
-                        <div class="ranking-card space-y-2">
+                        <div id="ranking-card-wrapper" class="ranking-card space-y-2">
                             <h3 class="text-[10px] font-black text-amber-400 uppercase italic flex items-center gap-2 mb-3"><i class="fas fa-trophy"></i> Top Scholars</h3>
-                            <div class="grid grid-cols-[24px_0.75fr_45px_30px_65px_65px_30px] gap-2 items-center text-[8px] font-black text-white/40 uppercase border-b border-white/10 pb-1.5 mb-1">
-                                <span>RK</span><span>NAME</span><span class="text-left">EXP</span><span class="text-left">LV</span><span class="text-left">10th Ave.</span><span class="text-left">ALL Ave.</span><span class="text-left">SESS</span>
+                            <div id="ranking-header" class="grid grid-cols-[30px_1fr_50px_35px_70px_70px_40px_50px_50px_140px] gap-3 items-center text-[8px] font-black text-white/40 uppercase border-b border-white/10 pb-1.5 mb-1">
+                                <span>RK</span><span>NAME</span><span class="text-left">EXP</span><span class="text-left">LV</span><span class="text-left">10th Ave.</span><span class="text-left">ALL Ave.</span><span class="text-left">SESS</span><span class="text-left">CST</span><span class="text-left">MST</span><span class="text-left">LAST</span>
                             </div>
                             <div id="ranking-container" class="space-y-1"></div>
                         </div>
                     </div>
+                    <div id="daily-stats-container" class="glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-4 md:p-6 space-y-3 max-h-[200px] overflow-y-auto"></div>
                 </div>
 
                 <div class="glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 space-y-6 flex flex-col">
@@ -210,23 +243,29 @@
                 </div>
                 <div class="space-y-2 pt-4 border-t border-white/5">
                     <h3 class="text-xs font-black text-white/50 uppercase italic flex items-center gap-2"><i class="fas fa-link"></i> Sync Manager</h3>
-                    <input id="main-spreadsheet-url" type="text" class="w-full bg-black border border-slate-700 rounded p-2 text-[10px] text-emerald-300 outline-none" value="https://docs.google.com/spreadsheets/d/1IxlE8Kj4NJUlNo1XmLoO6z1_dFXhYVy6AacSWUMgfPY/edit">
+                    <input id="main-spreadsheet-url" type="text" class="w-full bg-black border border-slate-700 rounded p-2 text-[10px] text-emerald-300 outline-none" value="">
                     <button id="sync-all-btn-action" class="w-full bg-indigo-600 text-white text-[10px] py-3 rounded-lg font-black uppercase">Refresh & Sync Now</button>
                 </div>
             </div>
         </div>
 
+        <!-- 演習画面・リザルト画面などは変更なし -->
         <div id="quiz-screen" class="hidden space-y-4 fade-in">
-            <div class="grid grid-cols-3 gap-2 px-1">
-                <div class="glass-panel p-2 rounded-xl text-center"><p class="text-[8px] text-slate-500 mb-0.5">Acc.</p><p id="current-accuracy" class="text-sm font-flashy" style="color: var(--accent-primary)">0%</p></div>
-                <div class="glass-panel p-2 rounded-xl text-center"><p class="text-[8px] text-slate-500 mb-0.5">Streak</p><p id="current-streak" class="text-sm font-flashy text-amber-400">0</p></div>
-                <div class="glass-panel p-2 rounded-xl text-center"><p class="text-[8px] text-slate-500 mb-0.5">Prog.</p><p class="text-xs font-flashy text-white"><span id="q-current">1</span>/<span id="q-total">10</span></p></div>
+            <div class="flex justify-between items-center px-1">
+                <div class="grid grid-cols-3 gap-2 flex-1">
+                    <div class="glass-panel p-2 rounded-xl text-center"><p class="text-[8px] text-slate-500 mb-0.5">Acc.</p><p id="current-accuracy" class="text-sm font-flashy" style="color: #818cf8;">0%</p></div>
+                    <div class="glass-panel p-2 rounded-xl text-center"><p class="text-[8px] text-slate-500 mb-0.5">Streak</p><p id="current-streak" class="text-sm font-flashy text-amber-400">0</p></div>
+                    <div class="glass-panel p-2 rounded-xl text-center"><p class="text-[8px] text-slate-500 mb-0.5">Prog.</p><p class="text-xs font-flashy text-white"><span id="q-current">1</span>/<span id="q-total">10</span></p></div>
+                </div>
+                <button id="abort-quiz-btn" onclick="window.abortQuiz()" class="ml-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 px-4 py-2 rounded-xl text-[10px] font-black uppercase border border-rose-500/30 transition-all flex items-center gap-2">
+                    <i class="fas fa-times"></i> QUIT
+                </button>
             </div>
             <div id="dot-bar" class="flex justify-center gap-1 py-1"></div>
             <div class="glass-panel rounded-[1.5rem] p-6 relative overflow-hidden">
                 <div id="goal-indicator" class="absolute top-0 left-0 h-1 transition-all duration-700" style="width: 0%; background: var(--accent-primary)"></div>
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center"><span id="diff-badge" class="px-3 py-1 rounded-full text-[8px] font-black bg-white/5 text-slate-300 uppercase"></span><p id="q-history-stat" class="text-[10px] font-flashy" style="color: var(--accent-primary)">0% (0/0)</p></div>
+                    <div class="flex justify-between items-center"><span id="diff-badge" class="px-3 py-1 rounded-full text-[10px] font-black bg-white/5 text-slate-300 uppercase"></span><span id="q-history-stat" class="neural-level-badge text-[10px]">0% (0/0)</span></div>
                     <h2 id="question-text" class="text-lg md:text-2xl font-bold leading-snug text-white whitespace-pre-wrap text-left"></h2>
                     <div id="options-container" class="grid grid-cols-1 gap-2 pt-2"></div>
                 </div>
@@ -283,6 +322,7 @@
                 </div>
             </div>
 
+            <!-- 装飾的なライン -->
             <div class="mt-8 flex justify-center gap-1 opacity-20">
                 <div class="w-1 h-1 bg-white rounded-full"></div>
                 <div class="w-12 h-[1px] bg-white self-center"></div>
@@ -291,15 +331,17 @@
         </div>
     </footer>
 
+    <!-- スクリプト部分は以前のものを継続して使用 -->
     <script>
-        const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbxQG4nFwXsJ8xb45t2iKr2uUg1Mm34Pl6I7DIblhybektEAmb98wb2owf5qKtgQpLU/exec"; 
-        const FIXED_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1_x5fMn9As5Xl_inb4XoKQsn0C-s94enVnrseoGv450o/edit";
+         const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbzEG0dEyk3JWfccG8lQRpO6DybLZEb_-YXy336N3b81h8GSVsb0n_jnBTQ3iCLl68ks/exec";
+        const FIXED_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1IxlE8Kj4NJUlNo1XmLoO6z1_dFXhYVy6AacSWUMgfPY/edit";
 
         let USER_NAME = "";
         let masterDataTotal = [];
         let quizData = []; let currentIdx = 0; let score = 0; let streak = 0;
         let canAnswer = true; let chartInstance = null;
         let sessionAnswers = [];
+        let isRankingPublic = true; // ランキング公開設定（デフォルトは公開）
         let currentSessionEra = ""; let currentSessionRangeLabel = "";
         let userHistory = [];
         let questionStats = {};
@@ -406,16 +448,50 @@
             return Math.round(n) + "%";
         }
 
-        function initUserInfo() { USER_NAME = localStorage.getItem('historia_user_name'); if (!USER_NAME) { getEl('registration-modal').classList.add('active'); } else { updateUserDisplay(); } }
-        function updateUserDisplay() { if (getEl('active-user-display')) getEl('active-user-display').innerText = USER_NAME; }
+        function initUserInfo() { 
+            USER_NAME = localStorage.getItem('historia_user_name'); 
+            // ローカルストレージに値がない場合はデフォルトで公開（true）
+            const storedPublic = localStorage.getItem('historia_ranking_public');
+            isRankingPublic = storedPublic === null ? true : storedPublic === 'true';
+            if (!USER_NAME) { 
+                getEl('registration-modal').classList.add('active'); 
+            } else { 
+                updateUserDisplay(); 
+            } 
+        }
+        function updateUserDisplay() { 
+            const displayEl = getEl('active-user-display');
+            if (displayEl) {
+                // 名前の横に公開/非公開を小さく英語で表示
+                const publicLabel = isRankingPublic ? '<span class="text-[7px] text-amber-400/70 font-normal ml-1">PUBLIC</span>' : '<span class="text-[7px] text-slate-300/80 font-normal ml-1">PRIVATE</span>';
+                displayEl.innerHTML = USER_NAME + publicLabel;
+                // 公開設定に応じてスタイルを変更（光らせる=公開）
+                if (isRankingPublic) {
+                    displayEl.classList.add('bg-amber-500/30', 'border-amber-400/50', 'text-amber-200', 'shadow-lg', 'shadow-amber-500/50');
+                    displayEl.classList.remove('bg-white/10', 'border-white/20', 'text-white');
+                } else {
+                    displayEl.classList.add('bg-white/10', 'border-white/20', 'text-white');
+                    displayEl.classList.remove('bg-amber-500/30', 'border-amber-400/50', 'text-amber-200', 'shadow-lg', 'shadow-amber-500/50');
+                }
+            }
+        }
+        function toggleRankingPublic() {
+            isRankingPublic = !isRankingPublic;
+            localStorage.setItem('historia_ranking_public', isRankingPublic.toString());
+            updateUserDisplay();
+        }
         
         setOnClick('register-btn', () => { const val = getEl('user-name-input').value.trim(); if (!val) return; USER_NAME = val; localStorage.setItem('historia_user_name', USER_NAME); getEl('registration-modal').classList.remove('active'); updateUserDisplay(); window.syncAllFromSpreadsheet(true); });
+        setOnClick('active-user-display', toggleRankingPublic);
 
         async function logDetailedResultsToSpreadsheet(pct, correct, total) {
             if (!FIXED_GAS_URL) return;
-            const sid = FIXED_SPREADSHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+            // 入力フィールドからURLを取得
+            const urlInput = getEl('main-spreadsheet-url');
+            const spreadsheetUrl = urlInput && urlInput.value ? urlInput.value : FIXED_SPREADSHEET_URL;
+            const sid = spreadsheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1];
             if (!sid) return;
-            const payload = { action: 'logAll', spreadsheetId: sid, dbName: USER_NAME, userId: USER_NAME, summaryAccuracy: pct + '%', summaryScore: `${correct}/${total}`, summaryRange: currentSessionRangeLabel, summaryEra: currentSessionEra, details: JSON.stringify(quizData.map((q, idx) => ({ era: q.era, qIdx: q.id.split('-').pop(), attemptNum: (questionStats[q.id]?.total || 1), result: sessionAnswers[idx] ? "○" : "×" }))), gainedExp: correct };
+            const payload = { action: 'logAll', spreadsheetId: sid, dbName: USER_NAME, userId: USER_NAME, summaryAccuracy: pct + '%', summaryScore: `${correct}/${total}`, summaryRange: currentSessionRangeLabel, summaryEra: currentSessionEra, details: JSON.stringify(quizData.map((q, idx) => ({ era: q.era, qIdx: q.id.split('-').pop(), attemptNum: (questionStats[q.id]?.total || 1), result: sessionAnswers[idx] ? "○" : "×" }))), gainedExp: correct, finalStreak: streak, isPublic: isRankingPublic ? '1' : '0' };
             try { await fetchWithRetry(`${FIXED_GAS_URL}?${new URLSearchParams(payload).toString()}`); window.syncAllFromSpreadsheet(true); } catch (e) {}
         }
 
@@ -425,34 +501,299 @@
                 const latest = sorted[0];
                 if (latest) {
                     const totalExp = latest.totalExp || 0;
-                    if (getEl('total-neural-exp')) getEl('total-neural-exp').innerText = totalExp;
+                    const expEl = getEl('total-neural-exp');
+                    if (expEl) {
+                        expEl.innerText = totalExp;
+                        // レベルアップ判定と点滅処理
+                        const lv = Math.floor(totalExp / 10);
+                        const nextLevelExp = (lv + 1) * 10;
+                        const remainingExp = nextLevelExp - totalExp;
+                        const isLevelUpJustNow = (totalExp % 10 === 0 && totalExp > 0);
+                        const isNearLevelUp = remainingExp <= 5 && remainingExp > 0;
+                        
+                        // クラスをリセット
+                        expEl.classList.remove('level-up-blink', 'near-level-up-blink');
+                        
+                        if (isLevelUpJustNow) {
+                            // レベルアップ直後：金色で点滅
+                            expEl.classList.add('level-up-blink');
+                        } else if (isNearLevelUp) {
+                            // レベルアップが近い：紫/ピンクで点滅
+                            expEl.classList.add('near-level-up-blink');
+                        }
+                    }
                     if (getEl('recent-accuracy')) getEl('recent-accuracy').innerText = formatAccStr(latest.avg10);
                     if (getEl('best-accuracy')) getEl('best-accuracy').innerText = formatAccStr(latest.overallAcc);
                     if (getEl('total-sessions-count')) getEl('total-sessions-count').innerText = userHistory.length;
                     const lv = Math.floor(totalExp / 10);
                     if (getEl('neural-level-display')) getEl('neural-level-display').innerText = `LV. ${String(lv).padStart(2, '0')}`;
+                } else {
+                    // 履歴がない場合の初期値
+                    if (getEl('total-neural-exp')) getEl('total-neural-exp').innerText = '0';
+                    if (getEl('recent-accuracy')) getEl('recent-accuracy').innerText = '--%';
+                    if (getEl('best-accuracy')) getEl('best-accuracy').innerText = '--%';
+                    if (getEl('total-sessions-count')) getEl('total-sessions-count').innerText = '0';
+                    if (getEl('neural-level-display')) getEl('neural-level-display').innerText = 'LV. 00';
                 }
                 
-                const myRank = rankingData.findIndex(r => r.name === USER_NAME) + 1;
-                if (getEl('current-rank-display')) {
-                    getEl('current-rank-display').innerText = myRank > 0 ? `RANK ${myRank}` : 'RANK --';
+                // 連続正解数を表示（GASスクリプトから取得した値を使用）
+                const currentStreak = window.currentStreak || 0;
+                const maxStreak = window.maxStreak || 0;
+                
+                if (getEl('current-streak-display')) getEl('current-streak-display').innerText = currentStreak;
+                if (getEl('max-streak-display')) getEl('max-streak-display').innerText = maxStreak;
+                
+                // ランキングデータがある場合のみランクを表示（分母も含める）
+                if (rankingData && rankingData.length > 0) {
+                    const myRank = rankingData.findIndex(r => r.name === USER_NAME) + 1;
+                    const totalRanking = rankingData.length;
+                    const myData = rankingData.find(r => r.name === USER_NAME);
+                    
+                    if (getEl('current-rank-display')) {
+                        const rankEl = getEl('current-rank-display');
+                        // ランクに応じてスタイルを変更（トップ10まで強調、上位50%以上も目立たせる）
+                        rankEl.className = 'text-[10px] px-4 py-1 rounded-full border font-black italic';
+                        const isTop50Percent = myRank > 0 && myRank <= Math.ceil(totalRanking / 2);
+                        
+                        if (myRank > 0 && myRank <= 10) {
+                            // トップ10までは順位に応じた強調
+                            if (myRank === 1) {
+                                rankEl.className += ' bg-gradient-to-r from-yellow-500/40 to-amber-500/40 border-yellow-400/60 text-yellow-200 shadow-lg shadow-yellow-500/50';
+                            } else if (myRank === 2) {
+                                rankEl.className += ' bg-gradient-to-r from-slate-400/40 to-slate-500/40 border-slate-300/60 text-slate-100 shadow-lg shadow-slate-400/50';
+                            } else if (myRank === 3) {
+                                rankEl.className += ' bg-gradient-to-r from-amber-600/40 to-orange-600/40 border-amber-500/60 text-amber-200 shadow-lg shadow-amber-600/50';
+                            } else if (myRank <= 5) {
+                                rankEl.className += ' bg-gradient-to-r from-purple-500/30 to-indigo-500/30 border-purple-400/50 text-purple-200 shadow-md shadow-purple-500/40';
+                            } else if (myRank <= 10) {
+                                rankEl.className += ' bg-gradient-to-r from-blue-500/25 to-cyan-500/25 border-blue-400/40 text-blue-200 shadow shadow-blue-500/30';
+                            }
+                        } else if (isTop50Percent) {
+                            // 10位より下位で上位50%以上は目立たせる（3位ほどではないが）
+                            rankEl.className += ' bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-400/30 text-green-200';
+                        } else {
+                            rankEl.className += ' bg-white/10 border-white/20 text-white';
+                        }
+                        // ランク表示は日付を含めない
+                        rankEl.innerText = myRank > 0 ? `RANK ${myRank} / ${totalRanking}` : `RANK -- / ${totalRanking}`;
+                    }
+                    
+                    // 最終取り組み日時を表示（ランク表示の右側に別要素として）
+                    if (getEl('last-attempt-display')) {
+                        const lastEl = getEl('last-attempt-display');
+                        let lastDate = null;
+                        let lastDateStr = '';
+                        
+                        if (myData && myData.lastAttemptDate) {
+                            lastDateStr = myData.lastAttemptDate;
+                            // "yyyy/MM/dd HH:mm:ss"形式から日付オブジェクトを作成
+                            const dateTimeParts = lastDateStr.split(' ');
+                            if (dateTimeParts.length >= 1) {
+                                const dateParts = dateTimeParts[0].split('/');
+                                if (dateParts.length >= 3) {
+                                    lastDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                                    if (dateTimeParts.length >= 2) {
+                                        const timeParts = dateTimeParts[1].split(':');
+                                        if (timeParts.length >= 3) {
+                                            lastDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), parseInt(timeParts[2]));
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // 履歴ログから最新の日時を取得
+                            const sortedHistory = [...userHistory].sort((a, b) => b.timestamp - a.timestamp);
+                            if (sortedHistory.length > 0 && sortedHistory[0].timestamp) {
+                                lastDate = new Date(sortedHistory[0].timestamp);
+                                const year = lastDate.getFullYear();
+                                const month = String(lastDate.getMonth() + 1).padStart(2, '0');
+                                const day = String(lastDate.getDate()).padStart(2, '0');
+                                const hours = String(lastDate.getHours()).padStart(2, '0');
+                                const minutes = String(lastDate.getMinutes()).padStart(2, '0');
+                                const seconds = String(lastDate.getSeconds()).padStart(2, '0');
+                                lastDateStr = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+                            }
+                        }
+                        
+                        if (lastDate) {
+                            const now = new Date();
+                            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            const lastDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+                            const diffTime = today - lastDay;
+                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                            
+                            let daysAgoText = '';
+                            if (diffDays === 0) {
+                                daysAgoText = 'Today';
+                            } else if (diffDays === 1) {
+                                daysAgoText = '1 day ago';
+                            } else {
+                                daysAgoText = `${diffDays} days ago`;
+                            }
+                            
+                            if (!lastDateStr) {
+                                const year = lastDate.getFullYear();
+                                const month = String(lastDate.getMonth() + 1).padStart(2, '0');
+                                const day = String(lastDate.getDate()).padStart(2, '0');
+                                const hours = String(lastDate.getHours()).padStart(2, '0');
+                                const minutes = String(lastDate.getMinutes()).padStart(2, '0');
+                                const seconds = String(lastDate.getSeconds()).padStart(2, '0');
+                                lastDateStr = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+                            }
+                            
+                            // 連続日数を計算（ここで計算してLast表示の右に表示）
+                            let consecutiveDays = 0;
+                            const dailyStatsForStreak = {};
+                            userHistory.forEach(h => {
+                                if (h.timestamp) {
+                                    const date = new Date(h.timestamp);
+                                    const dateKey = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+                                    dailyStatsForStreak[dateKey] = true;
+                                }
+                            });
+                            const sortedDatesForStreak = Object.keys(dailyStatsForStreak).sort((a, b) => new Date(b) - new Date(a));
+                            const todayForStreak = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            let checkDateForStreak = new Date(todayForStreak);
+                            
+                            for (const dateStr of sortedDatesForStreak) {
+                                const date = new Date(dateStr);
+                                const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                                const diffTime = checkDateForStreak - dateOnly;
+                                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                
+                                if (diffDays === 0 || diffDays === 1) {
+                                    consecutiveDays++;
+                                    checkDateForStreak = new Date(dateOnly);
+                                } else {
+                                    break;
+                                }
+                            }
+                            
+                            lastEl.innerHTML = `Last: ${lastDateStr} <span class="text-cyan-300 font-bold">(${daysAgoText})</span> <span class="text-cyan-400 font-bold ml-2">${consecutiveDays} days streak</span>`;
+                            lastEl.style.display = '';
+                        } else {
+                            lastEl.style.display = 'none';
+                        }
+                    }
+                    
+                } else {
+                    if (getEl('current-rank-display')) {
+                        getEl('current-rank-display').innerText = 'RANK --';
+                        getEl('current-rank-display').className = 'bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic';
+                    }
+                    if (getEl('last-attempt-display')) {
+                        getEl('last-attempt-display').style.display = 'none';
+                    }
                 }
 
                 const rankCont = getEl('ranking-container');
+                const rankWrapper = getEl('ranking-card-wrapper');
+                const rankHeader = getEl('ranking-header');
+                
                 if (rankCont) { 
-                    rankCont.innerHTML = rankingData.length > 0 ? rankingData.map((r, i) => {
-                        const rLv = Math.floor((r.exp || 0) / 10);
-                        const isMe = r.name === USER_NAME;
-                        return `<div class="grid grid-cols-[24px_0.75fr_45px_30px_65px_65px_30px] gap-2 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}">
-                            <span class="opacity-40 font-black">${i+1}</span>
-                            <span class="truncate font-bold">${r.name}</span>
-                            <span class="text-left font-flashy text-[9px] text-indigo-400">${r.exp}</span>
-                            <span class="text-left font-flashy text-[9px] text-emerald-400">${String(rLv).padStart(2,'0')}</span>
-                            <span class="text-left font-flashy text-[9px] text-orange-400">${r.avg10}</span>
-                            <span class="text-left font-flashy text-[9px] text-cyan-400">${r.overall}</span>
-                            <span class="text-left font-flashy opacity-60 text-[9px]">${r.count || 0}</span>
-                        </div>`;
-                    }).join('') : '<div class="text-[9px] text-slate-500 text-center py-2 italic">No ranking data</div>'; 
+                    // ランキングテーブルは常に表示（データがない場合でも）
+                    if (rankWrapper) rankWrapper.style.display = '';
+                    if (rankHeader) rankHeader.style.display = 'grid';
+                    
+                    if (rankingData && rankingData.length > 0) {
+                        rankCont.innerHTML = rankingData.map((r, i) => {
+                            const rLv = Math.floor((r.exp || 0) / 10);
+                            const isMe = r.name === USER_NAME;
+                            // 最終取り組み日（userHistoryから取得、年月日のみ、時刻はカット）
+                            let lastDateDisplay = '--';
+                            // 自分の場合はuserHistoryから取得（フロントページと同じロジック）
+                            if (isMe && userHistory && userHistory.length > 0) {
+                                const sortedUserHistory = [...userHistory].sort((a, b) => b.timestamp - a.timestamp);
+                                const latestEntry = sortedUserHistory[0];
+                                if (latestEntry && latestEntry.timestamp) {
+                                    const date = new Date(latestEntry.timestamp);
+                                    const year = date.getFullYear();
+                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                    const day = String(date.getDate()).padStart(2, '0');
+                                    lastDateDisplay = `${year}/${month}/${day}`;
+                                }
+                            }
+                            // rankingDataからも試す（フォールバック）
+                            if (lastDateDisplay === '--' && r.lastAttemptDate) {
+                                const dateTimeStr = String(r.lastAttemptDate);
+                                const dateTimeParts = dateTimeStr.split(' ');
+                                if (dateTimeParts.length >= 1) {
+                                    lastDateDisplay = dateTimeParts[0]; // 日付部分のみ（時刻はカット）
+                                }
+                            }
+                            return `<div class="grid grid-cols-[30px_1fr_50px_35px_70px_70px_40px_50px_50px_140px] gap-3 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}">
+                                <span class="opacity-40 font-black">${i+1}</span>
+                                <span class="truncate font-bold">${r.name}</span>
+                                <span class="text-left font-flashy text-[9px] text-indigo-400">${r.exp || 0}</span>
+                                <span class="text-left font-flashy text-[9px] text-emerald-400">${String(rLv).padStart(2,'0')}</span>
+                                <span class="text-left font-flashy text-[9px] text-orange-400">${r.avg10 || '--%'}</span>
+                                <span class="text-left font-flashy text-[9px] text-cyan-400">${r.overall || '--%'}</span>
+                                <span class="text-left font-flashy opacity-60 text-[9px]">${r.count || 0}</span>
+                                <span class="text-left font-flashy text-[9px] text-amber-400">${(r.currentStreak !== undefined && r.currentStreak !== null) ? r.currentStreak : '--'}</span>
+                                <span class="text-left font-flashy text-[9px] text-cyan-400">${(r.maxStreak !== undefined && r.maxStreak !== null) ? r.maxStreak : '--'}</span>
+                                <span class="text-left font-flashy text-[9px] text-slate-200 opacity-90">${lastDateDisplay}</span>
+                            </div>`;
+                        }).join('');
+                    } else {
+                        // データがない場合のメッセージ
+                        rankCont.innerHTML = '<div class="text-center text-[9px] text-slate-500/70 py-4 italic">No ranking data available</div>';
+                    }
+                    
+                    // 日付ごとの問題数と正答率を計算・表示（別の枠内で一番下に配置）
+                    const dailyStatsEl = getEl('daily-stats-container');
+                    if (dailyStatsEl) {
+                        if (userHistory && userHistory.length > 0) {
+                            // 日付ごとに問題数と正解数を集計
+                            const dailyStats = {};
+                            userHistory.forEach(h => {
+                                if (h.timestamp) {
+                                    const date = new Date(h.timestamp);
+                                    const dateKey = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+                                    if (!dailyStats[dateKey]) {
+                                        dailyStats[dateKey] = { count: 0, totalQ: 0, correctQ: 0, gainedExp: 0 };
+                                    }
+                                    dailyStats[dateKey].count += 1;
+                                    dailyStats[dateKey].totalQ += (h.totalQ || 10);
+                                    dailyStats[dateKey].correctQ += (h.correctCount || 0);
+                                    // 獲得EXPは正解数と同じ（gainedExp: correct）
+                                    dailyStats[dateKey].gainedExp += (h.correctCount || 0);
+                                }
+                            });
+                            
+                            // 日付順にソート（新しい順）
+                            const sortedDailyStats = Object.entries(dailyStats).sort((a, b) => {
+                                return new Date(b[0]) - new Date(a[0]);
+                            });
+                            
+                            // 表示を構築
+                            let html = `<div class="text-[10px] font-black uppercase italic mb-3" style="color: var(--accent-primary)">Daily Stats</div>`;
+                            // ヘッダー行（ラベル）
+                            html += `<div class="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr] gap-3 items-center text-[8px] text-slate-400 uppercase font-bold pb-1 mb-1 border-b border-white/10">
+                                <span class="text-left">Date</span>
+                                <span class="text-center">Sessions</span>
+                                <span class="text-center">Questions</span>
+                                <span class="text-center">Accuracy</span>
+                                <span class="text-center">Score</span>
+                                <span class="text-center">EXP</span>
+                            </div>`;
+                            sortedDailyStats.forEach(([dateStr, stats]) => {
+                                const accuracy = stats.totalQ > 0 ? Math.round((stats.correctQ / stats.totalQ) * 100) : 0;
+                                html += `<div class="grid grid-cols-[80px_1fr_1fr_1fr_1fr_1fr] gap-3 items-center text-[9px] text-slate-300 py-1.5 border-b border-white/5">
+                                    <span class="text-left">${dateStr}</span>
+                                    <span class="text-cyan-400 font-bold text-center">${stats.count} session${stats.count > 1 ? 's' : ''}</span>
+                                    <span class="text-cyan-400 font-bold text-center">${stats.totalQ} Q</span>
+                                    <span class="text-emerald-400 font-bold text-center">${accuracy}%</span>
+                                    <span class="text-slate-400 font-bold text-center">${stats.correctQ}/${stats.totalQ}</span>
+                                    <span class="text-indigo-400 font-bold text-center">+${stats.gainedExp} EXP</span>
+                                </div>`;
+                            });
+                            dailyStatsEl.innerHTML = html;
+                            dailyStatsEl.style.display = '';
+                        } else {
+                            dailyStatsEl.innerHTML = '<div class="text-[9px] text-slate-500/70 py-2 italic">No data available</div>';
+                            dailyStatsEl.style.display = '';
+                        }
+                    }
                 }
                 renderPerformanceChart(userHistory);
             } catch (err) { console.error("Stats Error:", err); }
@@ -518,33 +859,150 @@
 
         window.renderEraMenu = () => {
             const container = getEl('era-menu-container'); if(!container) return;
-            const storedTSV = JSON.parse(localStorage.getItem('nihonshi_tsv_ultra_main') || '{}');
-            masterDataTotal = Object.entries(storedTSV).flatMap(([era, tsv]) => parseTSVText(tsv, era));
+            let rawData = localStorage.getItem('nihonshi_data_main');
+            
+            // 以前の倫理バージョンのデータがある場合は、それも確認
+            if (!rawData || rawData === '{}' || rawData === 'null') {
+                const oldData = localStorage.getItem('nihonshi_tsv_ultra_main');
+                if (oldData) {
+                    console.log('以前の日本史データが見つかりました。移行します...');
+                    localStorage.setItem('nihonshi_data_main', oldData);
+                    rawData = oldData;
+                }
+            }
+            
+            let storedTSV = {};
+            try {
+                storedTSV = rawData ? JSON.parse(rawData) : {};
+            } catch (e) {
+                console.error('JSONパースエラー:', e, rawData);
+                container.innerHTML = '<div class="text-[9px] text-red-400 text-center py-4 italic">データの形式が正しくありません</div>';
+                return;
+            }
+            
+            // デバッグ用（コンソールに表示）
+            console.log('ローカルストレージの生データ:', rawData?.substring(0, 200));
+            console.log('パース後のstoredTSV:', storedTSV);
+            console.log('storedTSVの型:', typeof storedTSV);
+            console.log('storedTSVのキー:', Object.keys(storedTSV));
+            
+            masterDataTotal = Object.entries(storedTSV).flatMap(([category, tsv]) => parseTSVText(tsv, category));
             container.innerHTML = '';
-            const categoryFramework = [ { group: "1. 原始・古代", units: ["原始・古墳", "飛鳥・奈良", "平安前期", "平安中期・後期"] }, { group: "2. 中世", units: ["鎌倉時代", "南北朝・室町時代", "戦国・安土桃山時代"] }, { group: "3. 近世", units: ["江戸前期（家康〜綱吉）", "江戸中期（享保〜化政）", "江戸末期（幕末）"] }, { group: "4. 近代・現代", units: ["明治（前期〜中期）", "明治（後期）〜大正", "昭和（戦前・戦中）", "昭和（戦後）〜平成"] }, { group: "5. 頻出テーマ史", units: ["法制・政治制度", "土地制度・経済史", "外交史", "史料問題", "社会・民衆史"] } ];
+            
+            // 日本史の分野（シート名）の定義順序（優先表示順）
+            const nihonshiCategoriesOrder = [
+                '原始・古墳',
+                '飛鳥・奈良',
+                '平安前期',
+                '平安中期・後期',
+                '鎌倉時代',
+                '南北朝・室町時代',
+                '戦国・安土桃山時代',
+                '江戸前期（家康〜綱吉）',
+                '江戸中期（享保〜化政）',
+                '江戸末期（幕末）',
+                '明治（前期〜中期）',
+                '明治（後期）〜大正',
+                '昭和（戦前・戦中）',
+                '昭和（戦後）〜平成',
+                '法制・政治制度',
+                '土地制度・経済史',
+                '外交史',
+                '史料問題',
+                '社会・民衆史'
+            ];
+            
+            // 全てのシート名を取得
+            const allSheetNames = Object.keys(storedTSV);
+            console.log('取得したシート名:', allSheetNames);
+            console.log('masterDataTotalの件数:', masterDataTotal.length);
+            
+            if (allSheetNames.length === 0) {
+                const dataExists = rawData !== null && rawData !== '{}' && rawData !== '';
+                const debugInfo = dataExists ? 'データは存在しますが、シート名が取得できませんでした' : 'ローカルストレージにデータが見つかりません';
+                container.innerHTML = `
+                    <div class="text-[9px] text-slate-500 text-center py-4 italic space-y-2">
+                        <div>データを同期してください</div>
+                        <div class="text-red-400 text-[8px]">${debugInfo}<br>「Sync」ボタンをクリックしてデータを取得してください</div>
+                        <div class="text-amber-400 text-[7px] mt-2">デバッグ: ブラウザの開発者ツール（F12 または Cmd+Option+I）のConsoleタブで詳細を確認できます<br>データタイプ: ${typeof storedTSV}, キー数: ${allSheetNames.length}</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 定義順序のシート名を優先し、残りをソートして結合
+            const orderedCategories = nihonshiCategoriesOrder.filter(cat => allSheetNames.includes(cat));
+            const remainingCategories = allSheetNames.filter(cat => !nihonshiCategoriesOrder.includes(cat)).sort();
+            const categories = [...orderedCategories, ...remainingCategories];
+            
             const level = getEl('level-select').value;
-            categoryFramework.forEach((groupObj) => {
-                const gHeader = document.createElement('div'); gHeader.className = 'group-header'; gHeader.innerHTML = `<span>${groupObj.group}</span><i class="fas fa-caret-down"></i>`;
-                const gContent = document.createElement('div'); gContent.className = 'group-content overflow-hidden max-h-0';
-                groupObj.units.forEach((unitName) => {
-                    let eraProblems = masterDataTotal.filter(d => d.era === unitName);
-                    if (level === 'elementary') eraProblems = eraProblems.filter(q => ['基礎', '標準'].includes(q.tag));
-                    else if (level === 'intermediate') eraProblems = eraProblems.filter(q => ['基礎', '標準', '応用'].includes(q.tag));
-                    const eHeader = document.createElement('div'); eHeader.className = 'era-header'; eHeader.innerHTML = `<span>${unitName} <small class="opacity-50">(${eraProblems.length})</small></span><i class="fas fa-chevron-right text-[10px]"></i>`;
-                    const eContent = document.createElement('div'); eContent.className = 'era-content grid grid-cols-4 gap-1.5 p-2 max-h-0 overflow-hidden';
-                    if (eraProblems.length > 0) {
-                        for(let i=0; i<eraProblems.length; i+=10) {
-                            const btn = document.createElement('button'); btn.className = "bg-white/5 p-1.5 rounded-lg text-[8px] font-black min-h-[42px]";
-                            btn.innerText = `${i+1}-${Math.min(i+10, eraProblems.length)}`;
-                            btn.onclick = () => { currentSessionEra = unitName; currentSessionRangeLabel = btn.innerText; quizData = eraProblems.slice(i, i+10); startQuiz(); };
-                            eContent.appendChild(btn);
+            
+            // 各分野（シート名）を表示
+            categories.forEach((categoryName) => {
+                let categoryProblems = masterDataTotal.filter(d => d.era === categoryName);
+                if (level === 'elementary') categoryProblems = categoryProblems.filter(q => ['基礎', '標準'].includes(q.tag));
+                else if (level === 'intermediate') categoryProblems = categoryProblems.filter(q => ['基礎', '標準', '応用'].includes(q.tag));
+                
+                const eHeader = document.createElement('div'); 
+                eHeader.className = 'era-header'; 
+                eHeader.innerHTML = `<span>${categoryName} <small class="opacity-50">(${categoryProblems.length})</small></span><i class="fas fa-chevron-right text-[10px]"></i>`;
+                
+                const eContent = document.createElement('div'); 
+                eContent.className = 'era-content grid grid-cols-4 gap-1.5 p-2 max-h-0 overflow-hidden';
+                
+                if (categoryProblems.length > 0) {
+                    for(let i=0; i<categoryProblems.length; i+=10) {
+                        const rangeLabel = `${i+1}-${Math.min(i+10, categoryProblems.length)}`;
+                        
+                        // この範囲の問題セットの履歴を取得
+                        const rangeHistory = userHistory.filter(h => 
+                            h.summaryEra === categoryName && h.summaryRange === rangeLabel
+                        );
+                        const attemptCount = rangeHistory.length;
+                        let lastAttemptDate = '';
+                        if (rangeHistory.length > 0) {
+                            // 最新の日付を取得
+                            const latest = rangeHistory.sort((a, b) => b.timestamp - a.timestamp)[0];
+                            if (latest.date) {
+                                const dateStr = latest.date;
+                                // 日付を整形（例: "01/15" → "1/15", "01/05" → "1/5"）
+                                const parts = dateStr.split('/');
+                                lastAttemptDate = `${parseInt(parts[0])}/${parseInt(parts[1])}`;
+                            }
                         }
-                    } else { eContent.innerHTML = '<div class="col-span-4 text-[8px] opacity-30 text-center py-2">NO DATA</div>'; }
-                    eHeader.onclick = (ev) => { ev.stopPropagation(); eContent.classList.toggle('expanded'); };
-                    gContent.appendChild(eHeader); gContent.appendChild(eContent);
-                });
-                gHeader.onclick = () => gContent.classList.toggle('expanded');
-                container.appendChild(gHeader); container.appendChild(gContent);
+                        
+                        const btn = document.createElement('button'); 
+                        btn.className = "bg-white/5 p-1.5 rounded-lg text-[8px] font-black min-h-[42px] flex flex-col items-center justify-center gap-0.5";
+                        
+                        // ボタンの内容を構築
+                        let btnContent = `<span class="text-[9px]">${rangeLabel}</span>`;
+                        if (attemptCount > 0) {
+                            btnContent += `<span class="text-[7px] text-cyan-400 opacity-70">${attemptCount}回</span>`;
+                            if (lastAttemptDate) {
+                                btnContent += `<span class="text-[7px] text-slate-400 opacity-60">${lastAttemptDate}</span>`;
+                            }
+                        }
+                        btn.innerHTML = btnContent;
+                        
+                        btn.onclick = () => { 
+                            currentSessionEra = categoryName; 
+                            currentSessionRangeLabel = rangeLabel; 
+                            quizData = categoryProblems.slice(i, i+10); 
+                            startQuiz(); 
+                        };
+                        eContent.appendChild(btn);
+                    }
+                } else { 
+                    eContent.innerHTML = '<div class="col-span-4 text-[8px] opacity-30 text-center py-2">NO DATA</div>'; 
+                }
+                
+                eHeader.onclick = (ev) => { 
+                    ev.stopPropagation(); 
+                    eContent.classList.toggle('expanded'); 
+                };
+                
+                container.appendChild(eHeader); 
+                container.appendChild(eContent);
             });
         };
 
@@ -609,15 +1067,84 @@
 
         window.showHome = () => { getEl('quiz-screen').classList.add('hidden'); getEl('result-screen').classList.add('hidden'); getEl('home-screen').classList.remove('hidden'); updateStatsUI(); window.renderEraMenu(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
         
+        window.abortQuiz = () => {
+            if (confirm('演習を中断しますか？進行状況は保存されません。')) {
+                // クイズの状態をリセット
+                currentIdx = 0;
+                score = 0;
+                streak = 0;
+                sessionAnswers = [];
+                quizData = [];
+                canAnswer = true;
+                // ホーム画面に戻る
+                window.showHome();
+            }
+        };
+        
         window.syncAllFromSpreadsheet = async (isAuto = false) => { 
-            if (!FIXED_GAS_URL) return; const sid = FIXED_SPREADSHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1]; if (!sid) return;
+            if (!FIXED_GAS_URL) return;
+            
+            // UIの入力フィールドからURLを取得（存在する場合）、なければ固定URLを使用
+            const urlInput = getEl('main-spreadsheet-url');
+            const spreadsheetUrl = urlInput && urlInput.value ? urlInput.value : FIXED_SPREADSHEET_URL;
+            const sid = spreadsheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+            
+            if (!sid) {
+                console.error('スプレッドシートIDが取得できません:', spreadsheetUrl);
+                if (!isAuto) showModal("Sync Error", "スプレッドシートURLが正しくありません。");
+                return;
+            }
+            
             try { 
-                const result = await fetchWithRetry(`${FIXED_GAS_URL}?action=sync&id=${sid}&userId=${USER_NAME}`); 
-                if (result.problems) localStorage.setItem('nihonshi_tsv_ultra_main', JSON.stringify(result.problems)); 
+                const syncUrl = `${FIXED_GAS_URL}?action=sync&id=${sid}&userId=${USER_NAME}`;
+                console.log('同期URL:', syncUrl);
+                console.log('使用中のスプレッドシートURL:', spreadsheetUrl);
+                console.log('スプレッドシートID:', sid);
+                console.log('ユーザー名:', USER_NAME);
+                
+                const result = await fetchWithRetry(syncUrl); 
+                console.log('同期結果全体:', result);
+                console.log('resultの全キー:', Object.keys(result));
+                console.log('result.problems:', result.problems);
+                console.log('result.problemsの型:', typeof result.problems);
+                console.log('result.problemsのキー:', result.problems ? Object.keys(result.problems) : 'null');
+                
+                // デバッグ情報を表示
+                if (result.debug) {
+                    console.log('=== デバッグ情報 ===');
+                    console.log('スプレッドシート内の全シート名:', result.debug.allSheetNames);
+                    console.log('期待される分野名 (validUnits):', result.debug.validUnits);
+                    console.log('一致しなかったシート名:', result.debug.unmatchedSheets);
+                    console.log('取得できた問題データのキー:', result.debug.problemsKeys);
+                    console.log('==================');
+                }
+                
+                // problemsの中身を詳しく確認
+                if (result.problems) {
+                    console.log('result.problemsの詳細:', JSON.stringify(result.problems).substring(0, 500));
+                    const problemKeys = Object.keys(result.problems);
+                    console.log('問題キーの数:', problemKeys.length);
+                    if (problemKeys.length > 0) {
+                        console.log('最初のキー:', problemKeys[0]);
+                        console.log('最初の値のサンプル:', typeof result.problems[problemKeys[0]], result.problems[problemKeys[0]]?.substring(0, 100));
+                    }
+                }
+                
+                if (result.problems) {
+                    // データ構造を確認
+                    localStorage.setItem('nihonshi_data_main', JSON.stringify(result.problems));
+                    console.log('保存後のローカルストレージ:', localStorage.getItem('nihonshi_data_main')?.substring(0, 200));
+                }
                 if(result.userStats) { Object.entries(result.userStats).forEach(([key, s]) => { questionStats[key] = { total: parseInt(s.total) || 0, correct: parseInt(s.correct) || 0 }; }); }
-                if(result.history) userHistory = result.history; if(result.ranking) rankingData = result.ranking; 
+                if(result.history) userHistory = result.history; if(result.ranking) rankingData = result.ranking;
+                // 連続正解数をグローバル変数に保存
+                window.currentStreak = result.currentStreak || 0;
+                window.maxStreak = result.maxStreak || 0; 
                 updateStatsUI(); window.renderEraMenu(); 
-            } catch (e) { if (!isAuto) showModal("Sync Error", "データの取得に失敗しました。URLをご確認ください。"); } 
+            } catch (e) { 
+                console.error('同期エラー:', e);
+                if (!isAuto) showModal("Sync Error", "データの取得に失敗しました。URLをご確認ください。"); 
+            } 
         };
         
         function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
@@ -632,12 +1159,19 @@
         const feedbackJP = {
             perfect: ["素晴らしい！努力が完璧な形になりました。自信を持って突き進んでください。", "全問正解！あなたの集中力と知識の深さは、合格への確かな武器になります。", "非の打ち所がない成果です。今のペースを崩さず、着実にゴールへ近づきましょう。", "完璧な同期です！この感覚を忘れないよう、日々の演習を大切にしてください。", "至高の正答率です。学んできた時間は、決してあなたを裏切りません。", "見事な満点！基礎が完璧に固まっています。応用問題もこの調子で攻略しましょう。", "圧倒的な実力ですね。今のあなたに死角はありません。本番を想定した演習を。", "努力の天才です。満点を取るのは簡単なことではありません。自分を誇りに思って。", "この100％は積み上げてきた時間の結晶です。自信を胸に、次へ進みましょう。", "素晴らしい！一問一問を大切に解く姿勢がこの結果を生みました。合格は近いです。", "お見事！知識の点と点が繋がり、面となって定着しています。その調子！", "完璧な正解率。暗記だけでなく、歴史の流れをしっかり掴めている証拠です。", "文句なしのトップ成績！この精度を維持できれば、志望校への道は明るいですよ。", "最高のパフォーマンス！疲れを感じたときは、この結果を見て自信を取り戻して。", "あなたは着実に進化しています。満点は、あなたの正しい学習法の証明です。", "素晴らしい集中力！試験会場でもこのゾーンに入れるよう、練習を重ねましょう。", "パーフェクト！歴史の証人として、全ての出来事を完璧に把握できています。", "感動的な正答率！あなたの熱意がデータに反映されています。ずっと応援しています。", "揺るぎない知識。まさにマスターの領域です。自信をさらに深めていきましょう！", "完璧です！今日得たこの「正解の感覚」を大切に、明日の学習に繋げてください。"],
             high: ["非常に優秀なデータです。間違えた一問は、本番で得点するための「宝物」です。", "合格圏内の実力を維持できています。細かな穴を埋めることでさらに盤石に。", "素晴らしい正答率！あと一歩で完璧です。間違えた部分を丁寧にさらっておこう。", "安定感がありますね。本番でもこの冷静さを保てれば、必ず良い結果が。 ", "着実に力がついています。出来事を「なぜ」という視点で見直すとさらに伸びます。", "高スコアです！努力は確実に形になっています。油断せず、この調子で進もう。", "素晴らしい成果です。間違えた問題の解説を読み込み、自分のものにしましょう。", "優秀です！基礎知識がしっかり根付いています。次は満点を目指して挑戦を。", "このスコアは自信にして良いですよ。残りの微調整が、大きな得点差になります。", "高い水準を保てていますね。毎日の積み重ねが、あなたの実力を押し上げました。", "見事な正答率。間違えた箇所は、記憶をさらに強化するためのチャンスです。", "安定した成績ですね。学習リズムは非常に良い状態です。このまま突き進おう！", "素晴らしい！理解が深まっているのがよく分かります。流れを再確認して盤石に。", "あと少しで満点！その情熱があれば、どんな壁も乗り越えられます。頑張ろう！", "優秀なデータ同期です。間違えた問題は、今のうちに気づけて良かったと考えよう。", "順調に実力を伸ばしていますね。頑張りを一番知っているのはアプリの記録です。", "高得点です！本番でもこの精度で解ければ合格は近づきます。応援しています。", "知識の定着度が非常に高いです。さらに上を目指す姿勢が最高の結果を呼びます。", "素晴らしい！この調子で演習を重ね、苦手な時代を一つずつ消していきましょう。", "安定したスコア。日頃の努力が実力として定着しています。一歩一歩、自信を！"],
-            mid: ["一歩ずつ、確実に成長していますね。基礎は固まりました。次は応用力を磨こう。", "着実に前進しています. 間違えた問題こそ、あなたの実力を伸ばす鍵になります。", "手応えを感じ始めているはず。今は知識を繋ぎ合わせる時期。焦らず進んで。", "半分以上は正解できています。残りはもう一度教科書を見直すだけで解決します。", "努力の成果が見え始めています。毎日少しずつの積み重ねが大きな力に変わる。", "粘り強く頑張っていますね。このスコアは、あなたが挑戦し続けている証拠です。", "大丈夫、伸び代はたっぷりあります。今の悔しさをバネに、次はもっと高得点を。", "基礎ブロック의 再構築が必要です。間違えた時代の流れを物語のように読み返そう。", "着実な進歩です。得意な時代を一つ作り、そこから広げるのが合格への近道です。", "学習の成果が出ています。理解できている部分は自信を持ち、曖昧な部分は今。 ", "一歩一歩、階段を上っています。今の努力は必ず本番であなたを助けてくれます。", "前向きにいきましょう！演習を繰り返すごとに知識の網目は細かくなっていきます。", "基礎はできています。用語同士の繋がりを意識すると、正答率は跳ね上がります。", "今の頑張りが未来のあなたを作ります。間違えた問題を友達だと思って向き合って。", "合格へのプロセスを歩んでいます。点数に一喜一憂せず、内容の理解を優先して。", "学習のリズムを作っていきましょう。今日できなかったことは明日できれば良い。", "着実な歩みです. 歴史の全体像が見え始めています。枝葉を足す作業に入ろう。", "成長の真っ最中にいます。諦めずに繰り返すことで、景色は必ず変わりますよ。", "手応えを信じてください。今は点数よりも解説を読んで納得することを大切に。", "頑張っていますね。一問正解するごとに以前の自分を超えています。応援してる！"],
-            low: ["焦る必要はありません。今は知識の穴を見つける最高のチャンス。一つずつ。 ", "まずは基礎単語から再確認してみましょう。土台がしっかりすれば点数は伸びる。", "リンクが少し不安定なだけ. リラックスしてもう一度解説を読んでみてください。", "ここが踏ん張りどころ. 一つずつ丁寧に理解を深めれば、必ず景色が変わります。", "今は間違いを恐れず演習しましょう。その悔しさが、本番の得点に繋ります。", "伸び代は無限大！まずは一番好きな時代から集中的に復習してみるのはどう？ ", "歴史の流れをざっと掴むところから再開しましょう。物語を楽しむ気持ちで。 ", "あなたは今、一番苦しい時期かもしれません。レベルアップには挑戦が必要です。", "点数ではなく、今日新しく知った「知識」に注目. 一歩ずつ前へ進めば大丈夫。", "大丈夫です。どんな名人も、最初は今のあなたと同じ場所からスタートした。 ", "間違えた分だけ、強くなれます。解説を「なるほど」と思うまで読み返して。 ", "深呼吸して、もう一度基礎に立ち立ち返りましょう。急がば回れが最短ルートです。", "自分のペースで大丈夫. 他人と比べる必要はありません。昨日を超えていこう。", "知識を整理するチャンスです。年表を一度自分で書いてみると驚くほど進みます。", "諦めないで。このアプリは、あなたが再び立ち上がるのを何度でもサポートする。", "まずは一つ確実に覚えることから始めよう。その積み重ねが巨大な力になります。", "歴史は繋がりです。断片的な知識を、時代という糸で繋ぎ直す作業を今しよう。", "あなたの挑戦自体が素晴らしい。今日の結果を分析して明日の糧にしてください。", "少しずつでいい。教科書を1ページ読むだけで世界は昨日より広がっています。", "負けないで. あなたの「合格したい」という気持ちを、心から応援しています！"]
+            mid: ["一歩ずつ、確実に成長していますね。基礎は固まりました。次は応用力を磨こう。", "着実に前進しています. 間違えた問題こそ、あなたの実力を伸ばす鍵になります。", "手応えを感じ始めているはず。今は知識を繋ぎ合わせる時期。焦らず進んで。", "半分以上は正解できています。残りはもう一度教科書を見直すだけで解決します。", "努力の成果が見え始めています。毎日少しずつの積み重ねが大きな力に変わる。", "粘り強く頑張っていますね。このスコアは、あなたが挑戦し続けている証拠です。", "大丈夫、伸び代はたっぷりあります。今の悔しさをバネに、次はもっと高得点を。", "基礎ブロックの再構築が必要です。間違えた時代の流れを物語のように読み返そう。", "着実な進歩です。得意な時代を一つ作り、そこから広げるのが合格への近道です。", "学習の成果が出ています。理解できている部分は自信を持ち、曖昧な部分は今。 ", "一歩一歩、階段を上っています。今の努力は必ず本番であなたを助けてくれます。", "前向きにいきましょう！演習を繰り返すごとに知識の網目は細かくなっていきます。", "基礎はできています。用語同士の繋がりを意識すると、正答率は跳ね上がります。", "今の頑張りが未来のあなたを作ります。間違えた問題を友達だと思って向き合って。", "合格へのプロセスを歩んでいます。点数に一喜一憂せず、内容の理解を優先して。", "学習のリズムを作っていきましょう。今日できなかったことは明日できれば良い。", "着実な歩みです. 歴史の全体像が見え始めています。枝葉を足す作業に入ろう。", "成長の真っ最中にいます。諦めずに繰り返すことで、景色は必ず変わりますよ。", "手応えを信じてください。今は点数よりも解説を読んで納得することを大切に。", "頑張っていますね。一問正解するごとに以前の自分を超えています。応援してる！"],
+            low: ["焦る必要はありません。今は知識の穴を見つける最高のチャンス。一つずつ。 ", "まずは基礎単語から再確認してみましょう。土台がしっかりすれば点数は伸びる。", "リンクが少し不安定なだけ. リラックスしてもう一度解説を読んでみてください。", "ここが踏ん張りどころ. 一つずつ丁寧に理解を深めれば、必ず景色が変わります。", "今は間違いを恐れず演習しましょう。その悔しさが、本番の得点に繋がります。", "伸び代は無限大！まずは一番好きな時代から集中的に復習してみるのはどう？ ", "歴史の流れをざっと掴むところから再開しましょう。物語を楽しむ気持ちで。 ", "あなたは今、一番苦しい時期かもしれません。レベルアップには挑戦が必要です。", "点数ではなく、今日新しく知った「知識」に注目. 一歩ずつ前へ進めば大丈夫。", "大丈夫です。どんな名人も、最初は今のあなたと同じ場所からスタートした。 ", "間違えた分だけ、強くなれます。解説を「なるほど」と思うまで読み返して。 ", "深呼吸して、もう一度基礎に立ち返りましょう。急がば回れが最短ルートです。", "自分のペースで大丈夫. 他人と比べる必要はありません。昨日を超えていこう。", "知識を整理するチャンスです。年表を一度自分で書いてみると驚くほど進みます。", "諦めないで。このアプリは、あなたが再び立ち上がるのを何度でもサポートする。", "まずは一つ確実に覚えることから始めよう。その積み重ねが巨大な力になります。", "歴史は繋がりです。断片的な知識を、時代という糸で繋ぎ直す作業を今しよう。", "あなたの挑戦自体が素晴らしい。今日の結果を分析して明日の糧にしてください。", "少しずつでいい。教科書を1ページ読むだけで世界は昨日より広がっています。", "負けないで. あなたの「合格したい」という気持ちを、心から応援しています！"]
         };
 
         window.onload = () => { 
             initUserInfo(); 
+            
+            // 入力フィールドにデフォルトURLを設定
+            const urlInput = getEl('main-spreadsheet-url');
+            if (urlInput && (!urlInput.value || urlInput.value.trim() === '')) {
+                urlInput.value = FIXED_SPREADSHEET_URL;
+            }
+            
             const themeGrid = getEl('theme-grid');
             if (themeGrid) {
                 Object.entries(THEMES).forEach(([id, t]) => {
@@ -650,8 +1184,7 @@
                     themeGrid.appendChild(swatch);
                 });
             }
-            /* 初期テーマをパターン6 (modeF) に変更 */
-            const savedTheme = localStorage.getItem('historia_theme_mode') || 'modeF';
+            const savedTheme = localStorage.getItem('historia_theme_mode') || 'modeA';
             applyTheme(savedTheme);
             window.syncAllFromSpreadsheet(true); 
             setOnClick('next-btn-action', () => { currentIdx++; if (currentIdx < quizData.length) showQuestion(); else finishSession(); }); 
