@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>倫理 2025 Deep Learning Pro+ (Ultra) 98th Master</title>
+    <title>INFORMATION 2025 Deep Learning Pro+ (Ultra) 98th Master</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -158,7 +158,7 @@
         <div id="home-screen" class="space-y-6 md:space-y-8 fade-in">
             <!-- ヘッダーエリア -->
             <div class="text-center md:text-left space-y-2">
-                <h1 class="text-4xl md:text-7xl font-header tracking-tighter text-white">ETHICS <span id="app-version-display" class="font-flashy text-2xl md:text-5xl" style="color: var(--accent-primary)">ULTRA 98th</span></h1>
+                <h1 class="text-4xl md:text-7xl font-header tracking-tighter text-white">INFORMATION <span id="app-version-display" class="font-flashy text-2xl md:text-5xl" style="color: var(--accent-primary)">ULTRA 98th</span></h1>
                 <div class="flex flex-wrap justify-center md:justify-start items-center gap-2">
                     <button id="active-user-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic cursor-pointer transition-all hover:opacity-80">LOADING...</button>
                     <button id="question-shuffle-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic cursor-pointer transition-all hover:opacity-80">SHUFFLE OFF</button>
@@ -291,7 +291,7 @@
     <footer class="mt-auto pt-16 pb-12 text-center overflow-hidden">
         <div class="max-w-4xl mx-auto px-6">
             <p class="copyright-text font-flashy text-[8px] md:text-[9px] uppercase mb-6 text-white/40">
-                &copy; 2025 NEURAL ETHICS SYSTEMS | <span class="text-indigo-400/60">HIGH SPEC EDITION</span> | ALL RIGHTS RESERVED.
+                &copy; 2025 NEURAL INFORMATION SYSTEMS | <span class="text-indigo-400/60">HIGH SPEC EDITION</span> | ALL RIGHTS RESERVED.
             </p>
             
             <div class="credit-badge font-flashy text-[10px] md:text-[11px] tracking-[0.2em] uppercase font-black italic flex flex-wrap justify-center items-center gap-y-3 gap-x-4">
@@ -320,8 +320,8 @@
 
     <!-- スクリプト部分は以前のものを継続して使用 -->
     <script>
-         const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbwAHRb0ZP3DpHsuRlpQwkQkui7XBxG16x_Eu6K1wbSvTi4kU1OcrisjEOIfkYF81eQ/exec";
-        const FIXED_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1kGmAzn2owGAoN5pbdhnvaKixRuY0M0DZsShE2OFR6QY/edit";
+         const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbz2j_8gRB6v1NHBUDdm18bCIbAZZeYR_xTtFLiihYPzYqw9iqpXY80bM8heT3BytWMd/exec";
+        const FIXED_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/181d5LnYVizGaTeKI0YeI-ke1TtAmWBi82V6gOSy6sik/edit";
 
         let USER_NAME = "";
         let masterDataTotal = [];
@@ -864,7 +864,7 @@
             return text.split(/\r?\n/).filter(l => l.trim() !== "").map((line, i) => {
                 const cols = line.split('\t').map(c => c.trim().replace(/^"|"$/g, ''));
                 if (cols[0] === "問題" || cols.length < 5) return null;
-                let qRaw = cols[0].replace(/^[（\(](基礎|標準|応用|発展)[）\)]/, "").trim().replace(/([①②③④])/g, '<br>$1');
+                let qRaw = cols[0].replace(/^[（\(](基礎|標準|応用|発展)[）\)]/, "").trim().replace(/([①②③④])/g, '<br>$1').replace(/^<br>/, ''); // 最初の行の先頭の<br>を削除
                 let tag = cols[0].match(/^[（\(](基礎|標準|応用|発展)[）\)]/)?.[1] || "標準";
                 let rawExpl = (cols[13] || cols[14] || "詳細解説準備中。");
                 return { id: `${eraName}-${i + 1}`, era: eraName, question: qRaw, tag, options: [cols[1], cols[2], cols[3], cols[4]], answer: (parseInt(cols[10]) >= 1 && parseInt(cols[10]) <= 4) ? cols[parseInt(cols[10])] : cols[10], explanation: rawExpl.replace(/([①②③④])/g, '<br>$1') };
@@ -903,16 +903,17 @@
             masterDataTotal = Object.entries(storedTSV).flatMap(([category, tsv]) => parseTSVText(tsv, category));
             container.innerHTML = '';
             
-            // 倫理の分野（シート名）の定義順序（優先表示順）
-            const ethicsCategoriesOrder = [
-                '人間と社会',
-                '源流思想',
-                '西洋近代現代思想',
-                '日本の思想',
-                '応用倫理'
+            // 情報の分野（シート名）をスプレッドシートから動的に取得
+            // GASスクリプトから取得したシート名がstoredTSVのキーとして含まれている
+            // 指定された順序で表示（スプレッドシートの実際のシート名を優先）
+            const informationCategoriesOrder = [
+                '情報社会',
+                'デザイン',
+                'プログラミング',
+                'ネットワーク・データ'
             ];
             
-            // 全てのシート名を取得
+            // 全てのシート名を取得（スプレッドシートから動的に取得）
             const allSheetNames = Object.keys(storedTSV);
             console.log('取得したシート名:', allSheetNames);
             console.log('masterDataTotalの件数:', masterDataTotal.length);
@@ -931,8 +932,8 @@
             }
             
             // 定義順序のシート名を優先し、残りをソートして結合
-            const orderedCategories = ethicsCategoriesOrder.filter(cat => allSheetNames.includes(cat));
-            const remainingCategories = allSheetNames.filter(cat => !ethicsCategoriesOrder.includes(cat)).sort();
+            const orderedCategories = informationCategoriesOrder.filter(cat => allSheetNames.includes(cat));
+            const remainingCategories = allSheetNames.filter(cat => !informationCategoriesOrder.includes(cat)).sort();
             const categories = [...orderedCategories, ...remainingCategories];
             
             const level = getEl('level-select').value;
@@ -1021,7 +1022,7 @@
             const statKey = q.id;
             const qs = questionStats[statKey] || { total: 0, correct: 0 }; 
             if(getEl('q-history-stat')) getEl('q-history-stat').innerText = `${qs.total === 0 ? 0 : Math.round((qs.correct / qs.total) * 100)}% (${qs.correct}/${qs.total})`; 
-            let qText = q.question.replace(/正しい/g, '<span class="text-emerald-400 font-bold">正しい</span>').replace(/誤っている/g, '<span class="text-rose-400 font-bold">誤っている</span>');
+            let qText = q.question.replace(/正しい/g, '<span class="text-emerald-400 font-bold">正しい</span>').replace(/誤っている/g, '<span class="text-rose-400 font-bold">誤っている</span>').replace(/^<br>/, '').replace(/^\s+/, ''); // 最初の行の先頭の<br>と空白を削除
             getEl('question-text').innerHTML = qText; 
             const oc = getEl('options-container'); oc.innerHTML = ''; 
             shuffleArray([...q.options]).forEach((opt) => { 
