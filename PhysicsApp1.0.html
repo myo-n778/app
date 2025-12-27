@@ -1029,7 +1029,7 @@
                                 <span class="text-left font-flashy text-[9px] text-amber-400">${(r.currentStreak !== undefined && r.currentStreak !== null) ? r.currentStreak : '--'}</span>
                                 <span class="text-left font-flashy text-[9px] text-cyan-400">${(r.maxStreak !== undefined && r.maxStreak !== null) ? r.maxStreak : '--'}</span>
                                 <span class="text-left font-flashy text-[9px] text-slate-200 opacity-90">${lastDateDisplay}</span>
-                                <span class="text-left font-bold text-[8px] text-indigo-300 truncate" title="${statusDisplay}">${statusDisplay}</span>
+                                <span class="text-left font-bold text-[10px] text-indigo-300 truncate" title="${statusDisplay}">${statusDisplay}</span>
                             </div>`;
                             console.log(`生成されたHTML (${i}行目):`, rowHtml);
                             return rowHtml;
@@ -1261,14 +1261,6 @@
             // 物理の分野（シート名）をスプレッドシートから動的に取得
             // GASスクリプトから取得したシート名がstoredTSVのキーとして含まれている
             // 指定された順序で表示（スプレッドシートの実際のシート名を優先）
-            const physicsCategoriesOrder = [
-                '力学',
-                '熱力学',
-                '波動',
-                '電磁気',
-                '原子物理'
-            ];
-            
             // 全てのシート名を取得（スプレッドシートから動的に取得）
             const allSheetNames = Object.keys(storedTSV);
             console.log('取得したシート名:', allSheetNames);
@@ -1287,10 +1279,32 @@
                 return;
             }
             
-            // 定義順序のシート名を優先し、残りをソートして結合
-            const orderedCategories = physicsCategoriesOrder.filter(cat => allSheetNames.includes(cat));
-            const remainingCategories = allSheetNames.filter(cat => !physicsCategoriesOrder.includes(cat)).sort();
-            const categories = [...orderedCategories, ...remainingCategories];
+            // スプレッドシートのシート順序を取得（左から右の順序）
+            let sheetOrder = [];
+            try {
+                const savedSheetOrder = localStorage.getItem('ethics_sheet_order');
+                if (savedSheetOrder) {
+                    sheetOrder = JSON.parse(savedSheetOrder);
+                    console.log('保存されたシート順序:', sheetOrder);
+                }
+            } catch (e) {
+                console.error('シート順序の読み込みエラー:', e);
+            }
+            
+            // シート順序が存在する場合はそれを使用、ない場合はallSheetNamesの順序を使用
+            let categories = [];
+            if (sheetOrder.length > 0) {
+                // シート順序に存在するシート名のみを順序通りに取得
+                categories = sheetOrder.filter(name => allSheetNames.includes(name));
+                // シート順序にないシート名を追加（新しく追加されたシートなど）
+                const missingSheets = allSheetNames.filter(name => !sheetOrder.includes(name));
+                categories = [...categories, ...missingSheets];
+            } else {
+                // シート順序が保存されていない場合は、allSheetNamesの順序を使用
+                categories = allSheetNames;
+            }
+            
+            console.log('表示するカテゴリ順序:', categories);
             
             const level = getEl('level-select').value;
             
@@ -1754,6 +1768,11 @@
                     // データ構造を確認
                     localStorage.setItem('ethics_data_main', JSON.stringify(result.problems));
                     console.log('保存後のローカルストレージ:', localStorage.getItem('ethics_data_main')?.substring(0, 200));
+                }
+                // シートの順序を保存（スプレッドシートの左から右の順序）
+                if(result.sheetOrder && result.sheetOrder.length > 0) {
+                    localStorage.setItem('ethics_sheet_order', JSON.stringify(result.sheetOrder));
+                    console.log('シートの順序:', result.sheetOrder);
                 }
                 if(result.userStats) { 
                     Object.entries(result.userStats).forEach(([key, s]) => { 
