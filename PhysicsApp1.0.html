@@ -228,7 +228,7 @@
                         </div>
                         <div id="ranking-card-wrapper" class="ranking-card space-y-2">
                             <h3 class="text-[10px] font-black text-amber-400 uppercase italic flex items-center gap-2 mb-3"><i class="fas fa-trophy"></i> Top Scholars</h3>
-                            <div id="ranking-header" class="grid gap-3 items-center text-[8px] font-black text-white/40 uppercase border-b border-white/10 pb-1.5 mb-1" style="grid-template-columns: 30px auto 50px 35px 70px 70px 40px 50px 50px 140px 120px;">
+                            <div id="ranking-header" class="grid gap-3 items-center text-[8px] font-black text-white/40 uppercase border-b border-white/10 pb-1.5 mb-1" style="grid-template-columns: 30px auto 50px 35px 70px 70px 40px 50px 50px 140px auto;">
                                 <span class="text-center">RK</span><span class="text-white">NAME</span><span class="text-left">EXP</span><span class="text-left">LV</span><span class="text-left">10th Ave.</span><span class="text-left">ALL Ave.</span><span class="text-left">SESS</span><span class="text-left">CST</span><span class="text-left">MST</span><span class="text-left">LAST</span><span class="text-left">STATUS</span>
                             </div>
                             <div id="ranking-container" class="space-y-1"></div>
@@ -555,6 +555,8 @@
 
         function initUserInfo() { 
             USER_NAME = localStorage.getItem('ethics_user_name'); 
+            // ローカルストレージからstatusメッセージを読み込む
+            USER_STATUS = localStorage.getItem('ethics_user_status') || '';
             // ローカルストレージに値がない場合はデフォルトで公開（true）
             const storedPublic = localStorage.getItem('ethics_ranking_public');
             isRankingPublic = storedPublic === null ? true : storedPublic === 'true';
@@ -568,6 +570,7 @@
                 getEl('registration-modal').classList.add('active'); 
             } else { 
                 updateUserDisplay(); 
+                updateStatusDisplay();
                 updateShuffleDisplay();
             } 
         }
@@ -980,9 +983,42 @@
                         // パディングとマージンを考慮して少し余裕を持たせる
                         maxNameWidth += 20;
                         
+                        // 最大のstatusメッセージの幅を計算
+                        let maxStatusWidth = 0;
+                        tempSpan.className = 'font-bold text-indigo-300';
+                        tempSpan.style.whiteSpace = 'normal';
+                        tempSpan.style.wordBreak = 'break-word';
+                        tempSpan.style.overflowWrap = 'break-word';
+                        tempSpan.style.width = '200px'; // 最大幅を設定して計算
+                        
+                        rankingData.forEach((r) => {
+                            const statusDisplay = (r.status || (r.name === USER_NAME ? USER_STATUS : '')) || '--';
+                            tempSpan.textContent = String(statusDisplay);
+                            const width = tempSpan.offsetWidth;
+                            if (width > maxStatusWidth) {
+                                maxStatusWidth = width;
+                            }
+                        });
+                        
+                        // 最小幅を確保（"STATUS"ラベルの幅も考慮）
+                        tempSpan.textContent = 'STATUS';
+                        tempSpan.style.whiteSpace = 'nowrap';
+                        const statusLabelWidth = tempSpan.offsetWidth;
+                        if (statusLabelWidth > maxStatusWidth) {
+                            maxStatusWidth = statusLabelWidth;
+                        }
+                        
+                        // パディングとマージンを考慮して少し余裕を持たせる
+                        maxStatusWidth += 20;
+                        // 最小幅を確保（短いメッセージでも見やすく）
+                        if (maxStatusWidth < 150) {
+                            maxStatusWidth = 150;
+                        }
+                        
                         document.body.removeChild(tempSpan);
                         
                         console.log('最大の名前の幅:', maxNameWidth, 'px');
+                        console.log('最大のstatusの幅:', maxStatusWidth, 'px');
                         
                         rankCont.innerHTML = rankingData.map((r, i) => {
                             console.log(`ランキングエントリ ${i}:`, r);
@@ -1018,7 +1054,7 @@
                             const finalUserName = r.name || r.dbName || userNameDisplay || 'Unknown';
                             console.log(`最終的な名前表示: "${finalUserName}"`);
                             
-                            const rowHtml = `<div class="grid gap-3 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}" style="grid-template-columns: 30px ${maxNameWidth}px 50px 35px 70px 70px 40px 50px 50px 140px 120px;">
+                            const rowHtml = `<div class="grid gap-3 items-center text-[10px] py-1.5 border-b border-white/5 last:border-0 ${isMe ? 'text-amber-300 bg-white/5 font-bold' : 'text-slate-200'}" style="grid-template-columns: 30px ${maxNameWidth}px 50px 35px 70px 70px 40px 50px 50px 140px ${maxStatusWidth}px;">
                                 <span class="opacity-40 font-black text-center">${i+1}</span>
                                 <span class="font-bold text-white whitespace-nowrap" style="min-width: 0;">${String(finalUserName)}</span>
                                 <span class="text-left font-flashy text-[9px] text-indigo-400">${r.exp || 0}</span>
@@ -1029,7 +1065,7 @@
                                 <span class="text-left font-flashy text-[9px] text-amber-400">${(r.currentStreak !== undefined && r.currentStreak !== null) ? r.currentStreak : '--'}</span>
                                 <span class="text-left font-flashy text-[9px] text-cyan-400">${(r.maxStreak !== undefined && r.maxStreak !== null) ? r.maxStreak : '--'}</span>
                                 <span class="text-left font-flashy text-[9px] text-slate-200 opacity-90">${lastDateDisplay}</span>
-                                <span class="text-left font-bold text-[10px] text-indigo-300 truncate" title="${statusDisplay}">${statusDisplay}</span>
+                                <span class="text-left font-bold text-[10px] text-indigo-300 whitespace-normal break-words" style="word-break: break-word; overflow-wrap: break-word; max-width: ${maxStatusWidth}px;" title="${statusDisplay}">${statusDisplay}</span>
                             </div>`;
                             console.log(`生成されたHTML (${i}行目):`, rowHtml);
                             return rowHtml;
@@ -1038,7 +1074,7 @@
                         // ヘッダーの列幅も同じ値に設定
                         const headerEl = getEl('ranking-header');
                         if (headerEl) {
-                            headerEl.style.gridTemplateColumns = `30px ${maxNameWidth}px 50px 35px 70px 70px 40px 50px 50px 140px 120px`;
+                            headerEl.style.gridTemplateColumns = `30px ${maxNameWidth}px 50px 35px 70px 70px 40px 50px 50px 140px ${maxStatusWidth}px`;
                         }
                         
                         console.log('最終的なHTML:', rankCont.innerHTML.substring(0, 500));
