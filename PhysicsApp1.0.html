@@ -85,7 +85,22 @@
         
         /* 中のグリッドが適切な幅になるように固定（status列まで含めて広めに設定） */
         .ranking-card .grid { 
-            min-width: 900px; 
+            min-width: 1000px; 
+        }
+        /* status列の横スクロール対応 */
+        .ranking-status-cell {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            -ms-overflow-style: none;
+        }
+        .ranking-status-cell::-webkit-scrollbar {
+            height: 2px;
+        }
+        .ranking-status-cell::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
         }
         .goal-btn { transition: all 0.3s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; font-family: 'Orbitron', sans-serif; box-shadow: none !important; }
         .goal-btn.active { background: var(--accent-primary); border-color: white; color: white; }
@@ -983,13 +998,11 @@
                         // パディングとマージンを考慮して少し余裕を持たせる
                         maxNameWidth += 20;
                         
-                        // 最大のstatusメッセージの幅を計算
+                        // 最大のstatusメッセージの幅を計算（1行表示用）
                         let maxStatusWidth = 0;
                         tempSpan.className = 'font-bold text-indigo-300';
-                        tempSpan.style.whiteSpace = 'normal';
-                        tempSpan.style.wordBreak = 'break-word';
-                        tempSpan.style.overflowWrap = 'break-word';
-                        tempSpan.style.width = '200px'; // 最大幅を設定して計算
+                        tempSpan.style.whiteSpace = 'nowrap';
+                        tempSpan.style.width = 'auto';
                         
                         rankingData.forEach((r) => {
                             const statusDisplay = (r.status || (r.name === USER_NAME ? USER_STATUS : '')) || '--';
@@ -1002,7 +1015,6 @@
                         
                         // 最小幅を確保（"STATUS"ラベルの幅も考慮）
                         tempSpan.textContent = 'STATUS';
-                        tempSpan.style.whiteSpace = 'nowrap';
                         const statusLabelWidth = tempSpan.offsetWidth;
                         if (statusLabelWidth > maxStatusWidth) {
                             maxStatusWidth = statusLabelWidth;
@@ -1013,6 +1025,10 @@
                         // 最小幅を確保（短いメッセージでも見やすく）
                         if (maxStatusWidth < 150) {
                             maxStatusWidth = 150;
+                        }
+                        // 最大幅を制限（長すぎる場合は横スクロールで対応）
+                        if (maxStatusWidth > 300) {
+                            maxStatusWidth = 300;
                         }
                         
                         document.body.removeChild(tempSpan);
@@ -1065,7 +1081,7 @@
                                 <span class="text-left font-flashy text-[9px] text-amber-400">${(r.currentStreak !== undefined && r.currentStreak !== null) ? r.currentStreak : '--'}</span>
                                 <span class="text-left font-flashy text-[9px] text-cyan-400">${(r.maxStreak !== undefined && r.maxStreak !== null) ? r.maxStreak : '--'}</span>
                                 <span class="text-left font-flashy text-[9px] text-slate-200 opacity-90">${lastDateDisplay}</span>
-                                <span class="text-left font-bold text-[10px] text-indigo-300 whitespace-normal break-words" style="word-break: break-word; overflow-wrap: break-word; max-width: ${maxStatusWidth}px;" title="${statusDisplay}">${statusDisplay}</span>
+                                <span class="text-left font-bold text-[10px] text-indigo-300 ranking-status-cell" style="min-width: ${maxStatusWidth}px; max-width: ${maxStatusWidth}px;" title="${statusDisplay}">${statusDisplay}</span>
                             </div>`;
                             console.log(`生成されたHTML (${i}行目):`, rowHtml);
                             return rowHtml;
