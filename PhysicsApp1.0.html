@@ -184,7 +184,7 @@
         <div id="home-screen" class="fade-in">
             <!-- ヘッダーエリア -->
             <div class="text-center md:text-left space-y-2 mb-0 pb-0">
-                                <h1 class="text-3xl md:text-6xl font-header tracking-tighter text-white whitespace-nowrap">PHYSICS <span id="app-version-display" class="font-flashy text-2xl md:text-4xl" style="color: var(--accent-primary)">ULTRA Master <span class="text-[0.4em] md:text-[0.7em] opacity-70 font-normal">for 98 th</span></span></h1>
+                <h1 class="text-3xl md:text-6xl font-header tracking-tighter text-white whitespace-nowrap">PHYSICS <span id="app-version-display" class="font-flashy text-2xl md:text-4xl" style="color: var(--accent-primary)">ULTRA Master <span class="text-[0.4em] md:text-[0.7em] opacity-70 font-normal">for   98th</span></span></h1>
                 <div class="flex flex-wrap justify-center md:justify-start items-center gap-2">
                     <button id="active-user-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic cursor-pointer transition-all hover:opacity-80">LOADING...</button>
                     <button id="question-shuffle-display" class="bg-white/10 text-white text-[10px] px-4 py-1 rounded-full border border-white/20 font-black italic cursor-pointer transition-all hover:opacity-80">SHUFFLE OFF</button>
@@ -348,7 +348,7 @@
 
     <!-- スクリプト部分は以前のものを継続して使用 -->
     <script>
-         const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycbzPo3Mv5o_07Bik20AQ90RG4bYex3TiiEr5wjt3xkhzV9RXUQp9rdmf5DVQzIlkABEawg/exec";
+         const FIXED_GAS_URL = "https://script.google.com/macros/s/AKfycby_8RNMSCDNe6pgopczpvWDqReNwpdDt7I_Sph4vqu6V0BPW520Wasa85vhJ5aq3td1lw/exec";
         const FIXED_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1EDGQWV7VPNqTG_L1Pq2QLvT4Fz-Wkyk7RDpGpCh1xpU/edit";
 
         let USER_NAME = "";
@@ -359,6 +359,7 @@
         let sessionAnswers = [];
         let isRankingPublic = true; // ランキング公開設定（デフォルトは公開）
         let isQuestionShuffleEnabled = false; // 問題シャッフル設定（デフォルトはOFF）
+        let isWeakPointsMode = false; // Weak Pointsモード（間違えた問題のみ表示）
         let currentSessionEra = ""; let currentSessionRangeLabel = "";
         let userHistory = [];
         let questionStats = {};
@@ -559,6 +560,9 @@
             // ローカルストレージから問題シャッフル設定を読み込む（デフォルトはOFF）
             const storedShuffle = localStorage.getItem('ethics_question_shuffle');
             isQuestionShuffleEnabled = storedShuffle === 'true';
+            // ローカルストレージからWeak Pointsモード設定を読み込む（デフォルトはOFF）
+            const storedWeakPoints = localStorage.getItem('ethics_weak_points_mode');
+            isWeakPointsMode = storedWeakPoints === 'true';
             if (!USER_NAME) { 
                 getEl('registration-modal').classList.add('active'); 
             } else { 
@@ -696,6 +700,24 @@
             localStorage.setItem('ethics_question_shuffle', isQuestionShuffleEnabled.toString());
             updateShuffleDisplay();
         }
+        
+        window.toggleWeakList = () => {
+            isWeakPointsMode = !isWeakPointsMode;
+            localStorage.setItem('ethics_weak_points_mode', isWeakPointsMode.toString());
+            // メニューを再描画してWeak Pointsモードを反映
+            window.renderEraMenu();
+            // ボタンのスタイルを更新
+            const weakBtn = document.querySelector('button[onclick="window.toggleWeakList()"]');
+            if (weakBtn) {
+                if (isWeakPointsMode) {
+                    weakBtn.classList.add('bg-rose-600/40', 'border-rose-400/60', 'text-rose-200', 'shadow-lg', 'shadow-rose-500/50');
+                    weakBtn.classList.remove('bg-rose-500/20', 'border-rose-500/30', 'text-rose-300');
+                } else {
+                    weakBtn.classList.add('bg-rose-500/20', 'border-rose-500/30', 'text-rose-300');
+                    weakBtn.classList.remove('bg-rose-600/40', 'border-rose-400/60', 'text-rose-200', 'shadow-lg', 'shadow-rose-500/50');
+                }
+            }
+        };
         
         setOnClick('register-btn', () => { const val = getEl('user-name-input').value.trim(); if (!val) return; USER_NAME = val; localStorage.setItem('ethics_user_name', USER_NAME); getEl('registration-modal').classList.remove('active'); updateUserDisplay(); updateStatusDisplay(); updateShuffleDisplay(); window.syncAllFromSpreadsheet(true); });
         setOnClick('active-user-display', toggleRankingPublic);
@@ -1225,6 +1247,11 @@
                 if (level === 'elementary') categoryProblems = categoryProblems.filter(q => ['基礎', '標準'].includes(q.tag));
                 else if (level === 'intermediate') categoryProblems = categoryProblems.filter(q => ['基礎', '標準', '応用'].includes(q.tag));
                 
+                // Weak Pointsモードの場合は、通常のメニュー表示をスキップ（後で専用UIを表示）
+                if (isWeakPointsMode) {
+                    return; // Weak Pointsモードの場合は通常のメニューを表示しない
+                }
+                
                 const eHeader = document.createElement('div'); 
                 eHeader.className = 'era-header'; 
                 eHeader.innerHTML = `<span>${categoryName} <small class="opacity-50">(${categoryProblems.length})</small></span><i class="fas fa-chevron-right text-[10px]"></i>`;
@@ -1269,7 +1296,17 @@
                         btn.onclick = () => { 
                             currentSessionEra = categoryName; 
                             currentSessionRangeLabel = rangeLabel; 
-                            quizData = categoryProblems.slice(i, i+10); 
+                            let problemsToUse = categoryProblems.slice(i, i+10);
+                            
+                            // Weak Pointsモード: 間違えた問題だけをフィルタリング
+                            if (isWeakPointsMode) {
+                                problemsToUse = problemsToUse.filter(q => {
+                                    const stats = questionStats[q.id];
+                                    return stats && stats.total > 0 && stats.correct < stats.total;
+                                });
+                            }
+                            
+                            quizData = problemsToUse; 
                             startQuiz(); 
                         };
                         eContent.appendChild(btn);
@@ -1286,6 +1323,161 @@
                 container.appendChild(eHeader); 
                 container.appendChild(eContent);
             });
+            
+            // Weak Pointsモード用のUIを追加
+            if (isWeakPointsMode) {
+                const weakPointsContainer = document.createElement('div');
+                weakPointsContainer.className = 'glass-panel rounded-[1.5rem] md:rounded-[2.5rem] p-5 md:p-8 space-y-4';
+                
+                const weakPointsHeader = document.createElement('div');
+                weakPointsHeader.className = 'text-center space-y-2';
+                weakPointsHeader.innerHTML = `
+                    <h2 class="text-xl md:text-3xl font-flashy text-rose-300">今日の復習</h2>
+                    <p class="text-[10px] md:text-sm text-slate-300">10問（短時間）</p>
+                `;
+                
+                const startWeakPointsBtn = document.createElement('button');
+                startWeakPointsBtn.className = 'w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-4 rounded-2xl text-lg uppercase tracking-widest transition-all';
+                startWeakPointsBtn.innerText = '復習を開始';
+                startWeakPointsBtn.onclick = () => {
+                    const selectedProblems = selectWeakPointsProblems();
+                    if (selectedProblems.length === 0) {
+                        showModal("復習問題なし", "復習すべき問題がありません。通常モードで問題を解いてから再度お試しください。");
+                        return;
+                    }
+                    quizData = selectedProblems;
+                    currentSessionEra = "復習モード";
+                    currentSessionRangeLabel = "Weak Points";
+                    startQuiz();
+                };
+                
+                weakPointsContainer.appendChild(weakPointsHeader);
+                weakPointsContainer.appendChild(startWeakPointsBtn);
+                container.appendChild(weakPointsContainer);
+            }
+        };
+        
+        // Weak Pointsモード用の問題選択関数
+        function selectWeakPointsProblems() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayTimestamp = today.getTime();
+            
+            // 全問題を取得
+            const allProblems = [...masterDataTotal];
+            
+            // 各問題をカテゴリに分類
+            const categoryA = []; // wrong_streak >= 2
+            const categoryB = []; // wrong_streak >= 1 かつ last_wrong_at から数日経過（3日以上）
+            const categoryC = []; // 直近で間違えた問題（last_wrong_at が最近）
+            const categoryD = []; // 正解だが last_right_at から時間が経過（due_at が今日以前）
+            
+            allProblems.forEach(q => {
+                const stats = questionStats[q.id];
+                
+                // 問題を一度も解いていない場合はスキップ（復習対象外）
+                if (!stats || !stats.total || stats.total === 0) {
+                    return;
+                }
+                
+                // 初期化されていない場合はデフォルト値を設定
+                const wrong_streak = stats.wrong_streak || 0;
+                const last_wrong_at = stats.last_wrong_at || null;
+                const last_right_at = stats.last_right_at || null;
+                const due_at = stats.due_at || null;
+                
+                // カテゴリA: wrong_streak >= 2
+                if (wrong_streak >= 2) {
+                    categoryA.push(q);
+                }
+                // カテゴリB: wrong_streak >= 1 かつ last_wrong_at から3日以上経過
+                else if (wrong_streak >= 1 && last_wrong_at) {
+                    const daysSinceWrong = Math.floor((todayTimestamp - last_wrong_at) / (1000 * 60 * 60 * 24));
+                    if (daysSinceWrong >= 3) {
+                        categoryB.push(q);
+                    } else {
+                        // カテゴリC: 直近で間違えた問題（3日未満）
+                        categoryC.push(q);
+                    }
+                }
+                // カテゴリC: wrong_streak >= 1 だが last_wrong_at がない場合（古いデータ）
+                else if (wrong_streak >= 1) {
+                    categoryC.push(q);
+                }
+                // カテゴリD: 正解だが due_at が今日以前（復習が必要）
+                else if (due_at && due_at <= todayTimestamp) {
+                    categoryD.push(q);
+                }
+                // カテゴリD: due_at がないが、last_right_at から10日以上経過している場合
+                else if (!due_at && last_right_at) {
+                    const daysSinceRight = Math.floor((todayTimestamp - last_right_at) / (1000 * 60 * 60 * 24));
+                    if (daysSinceRight >= 10) {
+                        categoryD.push(q);
+                    }
+                }
+            });
+            
+            // 各カテゴリをシャッフル
+            shuffleArray(categoryA);
+            shuffleArray(categoryB);
+            shuffleArray(categoryC);
+            shuffleArray(categoryD);
+            
+            // 10問を選択（A:4問、B:3問、C:2問、D:1問）
+            const selected = [];
+            
+            // Aから4問
+            selected.push(...categoryA.slice(0, 4));
+            
+            // Bから3問（不足時はAから補完）
+            if (categoryB.length >= 3) {
+                selected.push(...categoryB.slice(0, 3));
+            } else {
+                selected.push(...categoryB);
+                const remaining = 3 - categoryB.length;
+                selected.push(...categoryA.slice(4, 4 + remaining));
+            }
+            
+            // Cから2問（不足時はB→Aから補完）
+            if (categoryC.length >= 2) {
+                selected.push(...categoryC.slice(0, 2));
+            } else {
+                selected.push(...categoryC);
+                const remaining = 2 - categoryC.length;
+                if (categoryB.length > 3) {
+                    selected.push(...categoryB.slice(3, 3 + remaining));
+                } else {
+                    const fromA = Math.min(remaining, categoryA.length - selected.filter(q => categoryA.includes(q)).length);
+                    selected.push(...categoryA.slice(4 + (3 - categoryB.length), 4 + (3 - categoryB.length) + fromA));
+                }
+            }
+            
+            // Dから1問（不足時はC→B→Aから補完）
+            if (categoryD.length >= 1) {
+                selected.push(...categoryD.slice(0, 1));
+            } else {
+                // Dが不足している場合、他のカテゴリから補完
+                const remaining = 1;
+                if (categoryC.length > 2) {
+                    selected.push(...categoryC.slice(2, 2 + remaining));
+                } else if (categoryB.length > 3) {
+                    selected.push(...categoryB.slice(3, 3 + remaining));
+                } else {
+                    const fromA = Math.min(remaining, categoryA.length - selected.filter(q => categoryA.includes(q)).length);
+                    selected.push(...categoryA.slice(4 + (3 - categoryB.length) + (2 - categoryC.length), 4 + (3 - categoryB.length) + (2 - categoryC.length) + fromA));
+                }
+            }
+            
+            // 10問に満たない場合は、全カテゴリからランダムに補完
+            if (selected.length < 10) {
+                const remaining = 10 - selected.length;
+                const allRemaining = [...categoryA, ...categoryB, ...categoryC, ...categoryD]
+                    .filter(q => !selected.includes(q));
+                shuffleArray(allRemaining);
+                selected.push(...allRemaining.slice(0, remaining));
+            }
+            
+            return selected.slice(0, 10); // 必ず10問
         };
 
         function startQuiz() { 
@@ -1330,7 +1522,59 @@
             if (!canAnswer) return; canAnswer = false; const q = quizData[currentIdx]; const isCorrect = (selected === q.answer); sessionAnswers[currentIdx] = isCorrect; 
             const statKey = q.id;
             const exist = questionStats[statKey] || { total: 0, correct: 0 }; 
-            questionStats[statKey] = { total: exist.total + 1, correct: exist.correct + (isCorrect ? 1 : 0), lastDate: Date.now() }; 
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayTimestamp = today.getTime();
+            
+            // 既存データとの互換性を保つため、復習システムの情報を初期化
+            const wrong_streak = exist.wrong_streak !== undefined ? exist.wrong_streak : 0;
+            const last_wrong_at = exist.last_wrong_at || null;
+            const last_right_at = exist.last_right_at || null;
+            
+            // 復習システムの状態遷移ルール
+            if (isCorrect) {
+                // 正解時
+                if (wrong_streak >= 1) {
+                    // wrong_streak >= 1 の場合：wrong_streak -= 1, due_at = 今日 + 3日
+                    const newDueDate = new Date(today);
+                    newDueDate.setDate(newDueDate.getDate() + 3);
+                    questionStats[statKey] = { 
+                        total: exist.total + 1, 
+                        correct: exist.correct + 1, 
+                        lastDate: Date.now(),
+                        wrong_streak: Math.max(0, wrong_streak - 1),
+                        last_wrong_at: last_wrong_at,
+                        last_right_at: todayTimestamp,
+                        due_at: newDueDate.getTime()
+                    };
+                } else {
+                    // wrong_streak == 0 の場合：due_at = 今日 + 10日
+                    const newDueDate = new Date(today);
+                    newDueDate.setDate(newDueDate.getDate() + 10);
+                    questionStats[statKey] = { 
+                        total: exist.total + 1, 
+                        correct: exist.correct + 1, 
+                        lastDate: Date.now(),
+                        wrong_streak: 0,
+                        last_wrong_at: last_wrong_at,
+                        last_right_at: todayTimestamp,
+                        due_at: newDueDate.getTime()
+                    };
+                }
+            } else {
+                // 不正解時：wrong_streak += 1, due_at = 今日 + 1日
+                const newDueDate = new Date(today);
+                newDueDate.setDate(newDueDate.getDate() + 1);
+                questionStats[statKey] = { 
+                    total: exist.total + 1, 
+                    correct: exist.correct, 
+                    lastDate: Date.now(),
+                    wrong_streak: wrong_streak + 1,
+                    last_wrong_at: todayTimestamp,
+                    last_right_at: last_right_at,
+                    due_at: newDueDate.getTime()
+                };
+            } 
             if (isCorrect) { score++; streak++; getEl(`dot-${currentIdx}`).classList.add('dot-correct'); } 
             else { streak = 0; getEl(`dot-${currentIdx}`).classList.add('dot-wrong'); } 
             const btns = getEl('options-container').getElementsByTagName('button'); 
@@ -1363,6 +1607,13 @@
             getEl('quiz-screen').classList.add('hidden'); getEl('result-screen').classList.remove('hidden');
             const pct = Math.round((score / quizData.length) * 100); 
             logDetailedResultsToSpreadsheet(pct, score, quizData.length);
+            
+            // 復習システムの情報をローカルストレージに保存
+            try {
+                localStorage.setItem('ethics_question_stats', JSON.stringify(questionStats));
+            } catch (e) {
+                console.error('復習システムの情報の保存に失敗しました:', e);
+            }
             getEl('final-score').innerText = pct; getEl('final-exp-gained').innerText = score;
             const newExp = oldExp + score;
             const newLv = Math.floor(newExp / 10);
@@ -1401,6 +1652,14 @@
         
         window.syncAllFromSpreadsheet = async (isAuto = false) => { 
             if (!FIXED_GAS_URL) return;
+            
+            // ユーザー名が設定されていない場合はエラーを表示
+            if (!USER_NAME || USER_NAME.trim() === '') {
+                if (!isAuto) {
+                    showModal("Sync Error", "ユーザー名が設定されていません。先にユーザー名を登録してください。");
+                }
+                return;
+            }
             
             // UIの入力フィールドからURLを取得（存在する場合）、なければ固定URLを使用
             const urlInput = getEl('main-spreadsheet-url');
@@ -1443,7 +1702,18 @@
                     localStorage.setItem('ethics_data_main', JSON.stringify(result.problems));
                     console.log('保存後のローカルストレージ:', localStorage.getItem('ethics_data_main')?.substring(0, 200));
                 }
-                if(result.userStats) { Object.entries(result.userStats).forEach(([key, s]) => { questionStats[key] = { total: parseInt(s.total) || 0, correct: parseInt(s.correct) || 0 }; }); }
+                if(result.userStats) { 
+                    Object.entries(result.userStats).forEach(([key, s]) => { 
+                        questionStats[key] = { 
+                            total: parseInt(s.total) || 0, 
+                            correct: parseInt(s.correct) || 0,
+                            wrong_streak: parseInt(s.wrong_streak) || 0,
+                            last_wrong_at: s.last_wrong_at ? parseInt(s.last_wrong_at) : null,
+                            last_right_at: s.last_right_at ? parseInt(s.last_right_at) : null,
+                            due_at: s.due_at ? parseInt(s.due_at) : null
+                        }; 
+                    }); 
+                }
                 if(result.history) userHistory = result.history; if(result.ranking) rankingData = result.ranking;
                 // 連続正解数をグローバル変数に保存
                 window.currentStreak = result.currentStreak || 0;
@@ -1471,8 +1741,38 @@
             low: ["焦る必要はありません。今は知識の穴を見つける最高のチャンス。一つずつ。 ", "まずは基礎単語から再確認してみましょう。土台がしっかりすれば点数は伸びる。", "リンクが少し不安定なだけ. リラックスしてもう一度解説を読んでみてください。", "ここが踏ん張りどころ. 一つずつ丁寧に理解を深めれば、必ず景色が変わります。", "今は間違いを恐れず演習しましょう。その悔しさが、本番の得点に繋がります。", "伸び代は無限大！まずは一番好きな時代から集中的に復習してみるのはどう？ ", "歴史の流れをざっと掴むところから再開しましょう。物語を楽しむ気持ちで。 ", "あなたは今、一番苦しい時期かもしれません。レベルアップには挑戦が必要です。", "点数ではなく、今日新しく知った「知識」に注目. 一歩ずつ前へ進めば大丈夫。", "大丈夫です。どんな名人も、最初は今のあなたと同じ場所からスタートした。 ", "間違えた分だけ、強くなれます。解説を「なるほど」と思うまで読み返して。 ", "深呼吸して、もう一度基礎に立ち返りましょう。急がば回れが最短ルートです。", "自分のペースで大丈夫. 他人と比べる必要はありません。昨日を超えていこう。", "知識を整理するチャンスです。年表を一度自分で書いてみると驚くほど進みます。", "諦めないで。このアプリは、あなたが再び立ち上がるのを何度でもサポートする。", "まずは一つ確実に覚えることから始めよう。その積み重ねが巨大な力になります。", "歴史は繋がりです。断片的な知識を、時代という糸で繋ぎ直す作業を今しよう。", "あなたの挑戦自体が素晴らしい。今日の結果を分析して明日の糧にしてください。", "少しずつでいい。教科書を1ページ読むだけで世界は昨日より広がっています。", "負けないで. あなたの「合格したい」という気持ちを、心から応援しています！"]
         };
 
-        window.onload = () => { 
-            initUserInfo(); 
+        window.onload = () => {
+            initUserInfo();
+            
+            // 復習システムの情報をローカルストレージから読み込む
+            try {
+                const savedStats = localStorage.getItem('ethics_question_stats');
+                if (savedStats) {
+                    const parsed = JSON.parse(savedStats);
+                    // 既存のquestionStatsとマージ（復習システムの情報を追加）
+                    Object.keys(parsed).forEach(key => {
+                        if (questionStats[key]) {
+                            questionStats[key] = { ...questionStats[key], ...parsed[key] };
+                        } else {
+                            questionStats[key] = parsed[key];
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('復習システムの情報の読み込みに失敗しました:', e);
+            }
+            
+            // Weak Pointsモードのボタンスタイルを初期化
+            const weakBtn = document.querySelector('button[onclick="window.toggleWeakList()"]');
+            if (weakBtn) {
+                if (isWeakPointsMode) {
+                    weakBtn.classList.add('bg-rose-600/40', 'border-rose-400/60', 'text-rose-200', 'shadow-lg', 'shadow-rose-500/50');
+                    weakBtn.classList.remove('bg-rose-500/20', 'border-rose-500/30', 'text-rose-300');
+                } else {
+                    weakBtn.classList.add('bg-rose-500/20', 'border-rose-500/30', 'text-rose-300');
+                    weakBtn.classList.remove('bg-rose-600/40', 'border-rose-400/60', 'text-rose-200', 'shadow-lg', 'shadow-rose-500/50');
+                }
+            }
             
             // 入力フィールドにデフォルトURLを設定
             const urlInput = getEl('main-spreadsheet-url');
