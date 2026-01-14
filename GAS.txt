@@ -1,0 +1,452 @@
+/**
+ 
+PHYSICS ULTRA プロキシ V9.8 (v2.7) - 物理版
+ 
+【修正】スプレッドシートのタブ名から動的に分野を取得
+【修正】全ユーザーの最新統計（平均・通算・回数）をランキング用に完全収集
+【統計】10,000回平均ロジックを継承
+【対応】CSV形式（問題,答え）とTSV形式（複数カラム）の両方に対応
+*/
+
+function doGet(e) {
+const action = e.parameter.action;
+if (action === 'logAll') return handleLogAll(e.parameter);
+if (action === 'updateStatus') return handleUpdateStatus(e.parameter);
+return handleSync(e.parameter.id, e.parameter.userId);
+}
+
+function handleLogAll(p) {
+try {
+const ss = SpreadsheetApp.openById(p.spreadsheetId);
+const details = JSON.parse(p.details);
+const now = new Date();
+const timestampStr = Utilities.formatDate(now, "JST", "yyyy/MM/dd HH:mm:ss");
+const historyHeaders = ["日時", "単元", "範囲", "正解率", "スコア", "ユーザー名", "ユーザーID", "取得EXP", "累計EXP", "10回平均正解率", "通算正答率", "連続正解数", "公開設定", "セッション数", "最終取り組み日", "ステータス"];
+const historySheet = getOrCreateSheet(ss, "履歴ログ", historyHeaders);
+let hData = historySheet.getDataRange().getValues();
+let userRows = hData.filter((r, idx) => idx > 0 && String(r[6]) === String(p.userId));
+
+// 既存データのL列（連続正解数）が空の場合、再計算処理を実行
+if (hData.length > 1) {
+  const needsRecalc = hData.some((r, idx) => idx > 0 && (r.length < 12 || r[11] === '' || r[11] === null || r[11] === undefined));
+  if (needsRecalc) {
+    recalculateStreaks(ss, historySheet, hData);
+    // 再計算後、データを再取得
+    hData = historySheet.getDataRange().getValues();
+    userRows = hData.filter((r, idx) => idx > 0 && String(r[6]) === String(p.userId));
+  }
+}
+
+const gainedExp = parseInt(p.gainedExp) || 0;
+let lastCumulativeExp = 0;
+if (userRows.length > 0) {
+  lastCumulativeExp = parseInt(userRows[userRows.length - 1][8]) || 0;
+}
+const newTotalExp = lastCumulativeExp + gainedExp;
+
+const parseAcc = (val) => {
+  if (val === "" || val === null || val === undefined) return null;
+  let str = String(val).replace('%', '').trim();
+  let num = parseFloat(str);
+  if (isNaN(num)) return null;
+  if (num <= 1.0 && num > 0 && String(val).indexOf('%') === -1) return num * 100;
+  return num;
+};
+
+const thisAcc = parseAcc(p.summaryAccuracy) || 0;
+const validPastAccsOverall = userRows.slice(-9999).map(r => parseAcc(r[3])).filter(v => v !== null);
+const overallAccStr = Math.round(([...validPastAccsOverall, thisAcc].reduce((a, b) => a + b, 0)) / (validPastAccsOverall.length + 1)) + "%";
+
+const validPastAccs10 = userRows.slice(-9).map(r => parseAcc(r[3])).filter(v => v !== null);
+const avg10AccStr = Math.round(([...validPastAccs10, thisAcc].reduce((a, b) => a + b, 0)) / (validPastAccs10.length + 1)) + "%";
+
+// 詳細履歴と統計DBの更新（先に実行してから連続正解数を計算）
+const detailSheet = getOrCreateSheet(ss, "詳細履歴ログ", ["日時", "単元", "問題番号", "挑戦回数", "結果", "ユーザー名", "ユーザーID"]);
+// 問題番号の調整：qIdxが行番号（1行目=1）として来ているため、1行目がヘッダーなので問題番号は qIdx - 1 にする
+const detailRows = details.map(d => {
+  const qIdxAdjusted = parseInt(d.qIdx) - 1; // 行番号から1を引いて問題番号に変換（1行目=ヘッダー、2行目=問題1）
+  return [timestampStr, d.era, qIdxAdjusted, d.attemptNum, d.result, p.dbName, p.userId];
+});
+detailSheet.getRange(detailSheet.getLastRow() + 1, 1, detailRows.length, 7).setValues(detailRows);
+
+// 連続正解数の計算（問題単位：詳細履歴ログから計算）
+// 詳細履歴ログに今回の結果を書き込んだ後、全履歴から連続正解数を計算
+let currentStreak = 0;
+const dData = detailSheet.getDataRange().getValues();
+const userDetails = [];
+
+for (let i = 1; i < dData.length; i++) {
+  if (String(dData[i][6]) === String(p.userId)) {
+    userDetails.push({
+      timestamp: new Date(dData[i][0]).getTime(),
+      result: dData[i][4] // "○" または "×"
+    });
+  }
+}
+
+if (userDetails.length > 0) {
+  // 時系列順にソート（古い順）
+  userDetails.sort((a, b) => a.timestamp - b.timestamp);
+  
+  // 最新から遡って連続「○」を数える
+  for (let i = userDetails.length - 1; i >= 0; i--) {
+    if (userDetails[i].result === "○") {
+      currentStreak++;
+    } else {
+      break;
+    }
+  }
+}
+
+// 公開設定を取得（1=公開、0または未指定=非公開）
+const isPublic = (p.isPublic === '1' || p.isPublic === 1 || p.isPublic === 'true') ? 1 : 0;
+
+// セッション数を計算（このユーザーの履歴ログの行数を数える）
+const sessionCount = userRows.length + 1; // 既存の行数 + 今回の1行
+
+// 最終取り組み日時（完全なタイムスタンプ）
+const lastAttemptDate = timestampStr; // "yyyy/MM/dd HH:mm:ss"形式
+
+const userStatus = p.status || '';
+historySheet.appendRow([
+  timestampStr, p.summaryEra, p.summaryRange, p.summaryAccuracy, p.summaryScore,
+  p.dbName, p.userId, gainedExp, newTotalExp, avg10AccStr, overallAccStr, currentStreak, isPublic, sessionCount, lastAttemptDate, userStatus
+]);
+
+// 統計DBの更新（既存ロジック）
+const statsSheet = getOrCreateSheet(ss, "問題別統計DB", ["単元", "問題番号", "累計挑戦", "正解数", "最新正解率", "最終実施日", "放置日数", "ユーザー名", "ユーザーID"]);
+const sData = statsSheet.getDataRange().getValues();
+details.forEach(d => {
+  // 問題番号の調整：qIdxが行番号（1行目=1）として来ているため、1行目がヘッダーなので問題番号は qIdx - 1 にする
+  const qIdxAdjusted = parseInt(d.qIdx) - 1; // 行番号から1を引いて問題番号に変換（1行目=ヘッダー、2行目=問題1）
+  let foundRow = -1;
+  for (let i = 1; i < sData.length; i++) {
+    if (String(sData[i][8]) === String(p.userId) && sData[i][0] == d.era && sData[i][1] == qIdxAdjusted) {
+      foundRow = i + 1; break;
+    }
+  }
+  const isCorrect = (d.result === "○");
+  if (foundRow > 0) {
+    const nTotal = (parseInt(sData[foundRow-1][2]) || 0) + 1;
+    const nCorrect = (parseInt(sData[foundRow-1][3]) || 0) + (isCorrect ? 1 : 0);
+    statsSheet.getRange(foundRow, 1, 1, 9).setValues([[d.era, qIdxAdjusted, nTotal, nCorrect, Math.round((nCorrect/nTotal)*100) + "%", timestampStr.split(" ")[0], 0, p.dbName, p.userId]]);
+  } else {
+    statsSheet.appendRow([d.era, qIdxAdjusted, 1, isCorrect ? 1 : 0, isCorrect ? "100%" : "0%", timestampStr.split(" ")[0], 0, p.dbName, p.userId]);
+  }
+});
+
+return returnJson({ status: "success", newTotalExp: newTotalExp });
+
+
+} catch (err) { return returnJson({ status: "error", message: err.toString() }); }
+}
+
+function handleSync(ssId, userId) {
+try {
+const ss = SpreadsheetApp.openById(ssId);
+const result = { problems: {}, userStats: {}, history: [], ranking: [], currentStreak: 0, maxStreak: 0, sheetOrder: [] };
+
+// システム用シートを除外するリスト
+const excludeSheets = ["履歴ログ", "詳細履歴ログ", "問題別統計DB"];
+
+// 物理版：システム用シート以外のすべてのシートを動的に取得
+// スプレッドシートのシート名（分野名）から自動的に問題データを抽出
+// 新しいシートを追加するだけで、自動的に問題データとして認識される
+// CSV形式（問題,答え）とTSV形式（複数カラム）の両方に対応
+// シートの順序（左から右）を保持
+ss.getSheets().forEach(s => {
+  const name = s.getName();
+  // システム用シートを除外し、その他のすべてのシート（分野）を取得
+  if (!excludeSheets.includes(name)) {
+    const sheetData = s.getDataRange().getValues();
+    // TSV形式に変換（タブ区切り）
+    // シート名がそのまま分野名（category/era）として使用される
+    result.problems[name] = sheetData.map(r => 
+      r.map(c => String(c).replace(/\t/g, " ").replace(/\n/g, " ")).join('\t')
+    ).join('\n');
+    // シートの順序を配列に追加（左から右の順序）
+    result.sheetOrder.push(name);
+  }
+});
+
+// 自分の統計
+const statsSheet = ss.getSheetByName("問題別統計DB");
+if (statsSheet) {
+  const sData = statsSheet.getDataRange().getValues();
+  for (let i = 1; i < sData.length; i++) {
+    if (String(sData[i][8]) === String(userId)) {
+      result.userStats[sData[i][0] + "-" + sData[i][1]] = { total: parseInt(sData[i][2]) || 0, correct: parseInt(sData[i][3]) || 0 };
+    }
+  }
+}
+
+const historySheet = ss.getSheetByName("履歴ログ");
+if (historySheet) {
+  const hDisp = historySheet.getDataRange().getDisplayValues();
+  const userFullMap = {};
+
+  for (let i = 1; i < hDisp.length; i++) {
+    const uId = String(hDisp[i][6]);
+    const exp = parseInt(hDisp[i][8]) || 0;
+    const uName = hDisp[i][5];
+    const avg10 = hDisp[i][9];
+    const overall = hDisp[i][10];
+    const isPublic = (hDisp[i][12] === 1 || hDisp[i][12] === '1' || hDisp[i][12] === '公開') ? true : false;
+
+    if (uId === String(userId)) {
+      const sParts = String(hDisp[i][4]).split('/');
+      result.history.push({ 
+        date: hDisp[i][0].split(' ')[0].substring(5),
+        score: hDisp[i][3], correctCount: parseInt(sParts[0]) || 0, totalQ: parseInt(sParts[1]) || 10,
+        timestamp: new Date(hDisp[i][0]).getTime(),
+        totalExp: exp, avg10: avg10, overallAcc: overall,
+        summaryEra: hDisp[i][1] || '', // 単元（分野名）
+        summaryRange: hDisp[i][2] || '' // 範囲（例：「1-10」）
+      });
+    }
+    
+    // ランキング用：公開設定が1（公開）のユーザーのみ収集
+    if (isPublic) {
+      const sessionCount = parseInt(hDisp[i][13]) || 0; // セッション数（N列）
+      const lastAttemptDate = hDisp[i][14] || ''; // 最終取り組み日（O列）
+      
+      const userStatus = hDisp[i][15] || ''; // ステータス（P列）
+      if (!userFullMap[uId] || exp >= userFullMap[uId].exp) {
+        userFullMap[uId] = {
+          name: uName, exp: exp, avg10: avg10, overall: overall,
+          count: sessionCount,
+          lastAttemptDate: lastAttemptDate,
+          status: userStatus
+        };
+      } else {
+        // より最新のデータで更新（セッション数と最終取り組み日も）
+        if (sessionCount > (userFullMap[uId].count || 0)) {
+          userFullMap[uId].count = sessionCount;
+          userFullMap[uId].lastAttemptDate = lastAttemptDate;
+        }
+      }
+    }
+  }
+  
+  // ランキングデータに連続正解数を追加（詳細履歴ログから計算）
+  // まず全てのユーザーに初期値0を設定
+  Object.keys(userFullMap).forEach(uId => {
+    userFullMap[uId].currentStreak = 0;
+    userFullMap[uId].maxStreak = 0;
+  });
+  
+  const detailSheetForRanking = ss.getSheetByName("詳細履歴ログ");
+  if (detailSheetForRanking) {
+    const dDataRanking = detailSheetForRanking.getDataRange().getValues();
+    const userDetailGroups = {};
+    
+    // 各ユーザーの詳細履歴をグループ化
+    for (let i = 1; i < dDataRanking.length; i++) {
+      const uId = String(dDataRanking[i][6]);
+      if (userFullMap[uId]) {
+        if (!userDetailGroups[uId]) {
+          userDetailGroups[uId] = [];
+        }
+        userDetailGroups[uId].push({
+          timestamp: new Date(dDataRanking[i][0]).getTime(),
+          result: dDataRanking[i][4] // "○" または "×"
+        });
+      }
+    }
+    
+    // 各ユーザーの連続正解数を計算
+    Object.keys(userDetailGroups).forEach(uId => {
+      const userDetails = userDetailGroups[uId];
+      if (userDetails.length > 0) {
+        userDetails.sort((a, b) => a.timestamp - b.timestamp);
+        
+        // 現在の連続正解数
+        let currentStreak = 0;
+        for (let i = userDetails.length - 1; i >= 0; i--) {
+          if (userDetails[i].result === "○") {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+        
+        // 最大連続正解数
+        let maxStreak = 0;
+        let tempStreak = 0;
+        userDetails.forEach(d => {
+          if (d.result === "○") {
+            tempStreak++;
+            maxStreak = Math.max(maxStreak, tempStreak);
+          } else {
+            tempStreak = 0;
+          }
+        });
+        
+        userFullMap[uId].currentStreak = currentStreak;
+        userFullMap[uId].maxStreak = maxStreak;
+      }
+    });
+  }
+  
+  result.ranking = Object.values(userFullMap).sort((a, b) => b.exp - a.exp); // 全参加者を返す
+}
+
+// 連続正解数の取得（詳細履歴ログから直接計算）
+const detailSheetSync = ss.getSheetByName("詳細履歴ログ");
+if (detailSheetSync) {
+  const dData = detailSheetSync.getDataRange().getValues();
+  const userDetails = [];
+  
+  for (let i = 1; i < dData.length; i++) {
+    if (String(dData[i][6]) === String(userId)) {
+      userDetails.push({
+        timestamp: new Date(dData[i][0]).getTime(),
+        result: dData[i][4] // "○" または "×"
+      });
+    }
+  }
+  
+  if (userDetails.length > 0) {
+    // 時系列順にソート（古い順）
+    userDetails.sort((a, b) => a.timestamp - b.timestamp);
+    
+    // 現在の連続正解数：最新から遡って連続「○」を数える
+    let currentStreak = 0;
+    for (let i = userDetails.length - 1; i >= 0; i--) {
+      if (userDetails[i].result === "○") {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+    result.currentStreak = currentStreak;
+    
+    // 最大連続正解数：全履歴から最大の連続「○」を計算
+    let maxStreak = 0;
+    let tempStreak = 0;
+    userDetails.forEach(d => {
+      if (d.result === "○") {
+        tempStreak++;
+        maxStreak = Math.max(maxStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    });
+    result.maxStreak = maxStreak;
+  } else {
+    result.currentStreak = 0;
+    result.maxStreak = 0;
+  }
+} else {
+  result.currentStreak = 0;
+  result.maxStreak = 0;
+}
+
+return returnJson(result);
+
+
+} catch (err) { return returnJson({ error: err.toString() }); }
+}
+
+function getOrCreateSheet(ss, name, headers) {
+let sheet = ss.getSheetByName(name);
+if (!sheet) { 
+  sheet = ss.insertSheet(name); 
+  sheet.appendRow(headers); 
+  sheet.getRange(1, 1, 1, headers.length).setBackground("#f3f3f3").setFontWeight("bold"); 
+  sheet.setFrozenRows(1); 
+} else {
+  // 既存シートの場合、ヘッダー行を確認・更新
+  const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (headerRow.length < headers.length) {
+    // ヘッダーが不足している場合、追加
+    sheet.getRange(1, headerRow.length + 1, 1, headers.length - headerRow.length).setValues([headers.slice(headerRow.length)]);
+    sheet.getRange(1, headerRow.length + 1, 1, headers.length - headerRow.length).setBackground("#f3f3f3").setFontWeight("bold");
+  }
+}
+return sheet;
+}
+
+// 既存データの連続正解数を再計算する関数（詳細履歴ログから計算）
+function recalculateStreaks(ss, historySheet, hData) {
+  if (hData.length <= 1) return; // ヘッダー行のみの場合は処理しない
+  
+  const detailSheetRecalc = ss.getSheetByName("詳細履歴ログ");
+  if (!detailSheetRecalc) return;
+  
+  const dData = detailSheetRecalc.getDataRange().getValues();
+  
+  // ユーザーIDごとに詳細履歴をグループ化
+  const userDetailGroups = {};
+  for (let i = 1; i < dData.length; i++) {
+    const userId = String(dData[i][6]);
+    if (!userDetailGroups[userId]) {
+      userDetailGroups[userId] = [];
+    }
+    userDetailGroups[userId].push({
+      timestamp: new Date(dData[i][0]).getTime(),
+      result: dData[i][4] // "○" または "×"
+    });
+  }
+  
+  // 各ユーザーごとに連続正解数を計算
+  Object.keys(userDetailGroups).forEach(userId => {
+    const userDetails = userDetailGroups[userId];
+    // 時系列順にソート（古い順）
+    userDetails.sort((a, b) => a.timestamp - b.timestamp);
+    
+    // 履歴ログから該当ユーザーの行を取得
+    const userHistoryRows = [];
+    for (let i = 1; i < hData.length; i++) {
+      if (String(hData[i][6]) === String(userId)) {
+        userHistoryRows.push({ rowIndex: i + 1, timestamp: new Date(hData[i][0]).getTime() });
+      }
+    }
+    // 時系列順にソート（古い順）
+    userHistoryRows.sort((a, b) => a.timestamp - b.timestamp);
+    
+    // 各セッション時点での連続正解数を計算
+    userHistoryRows.forEach((hr, idx) => {
+      // このセッション時点までの詳細履歴を取得
+      const detailsUpToThis = userDetails.filter(d => d.timestamp <= hr.timestamp);
+      
+      // 最新から遡って連続「○」を数える
+      let currentStreak = 0;
+      for (let i = detailsUpToThis.length - 1; i >= 0; i--) {
+        if (detailsUpToThis[i].result === "○") {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+      
+      // L列（index 11 = 列12）に連続正解数を書き込む
+      historySheet.getRange(hr.rowIndex, 12).setValue(currentStreak);
+    });
+  });
+}
+
+// ステータス更新処理
+function handleUpdateStatus(p) {
+try {
+const ss = SpreadsheetApp.openById(p.spreadsheetId);
+const historySheet = ss.getSheetByName("履歴ログ");
+if (!historySheet) return returnJson({ status: "error", message: "履歴ログシートが見つかりません" });
+
+const hData = historySheet.getDataRange().getValues();
+// 該当ユーザーの最新の行を探してステータスを更新
+for (let i = hData.length - 1; i >= 1; i--) {
+  if (String(hData[i][6]) === String(p.userId)) {
+    // P列（index 15 = 列16）にステータスを更新
+    historySheet.getRange(i + 1, 16).setValue(p.status || '');
+    return returnJson({ status: "success" });
+  }
+}
+return returnJson({ status: "error", message: "ユーザーが見つかりません" });
+} catch (err) {
+return returnJson({ status: "error", message: err.toString() });
+}
+}
+
+function returnJson(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
+
